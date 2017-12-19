@@ -8,8 +8,8 @@ class Pipe:
 		self.node1 = Node1
 		self.node2 = Node2
 		
-		self.node1.pipesOut.append(self)
-		self.node2.pipesIn.append(self)
+		self.node1.pipesOut.append(self)	### All pipes start as a pipeOut from a node 
+		self.node2.pipesIn.append(self)		### and end at a pipeIn
 	
 		self.diameter = float(Diameter)	/1000.		#[m]
 		self.roughness = float(Roughness) 		
@@ -70,30 +70,34 @@ class Pipe:
 		####  Need to implement the interpolation across the transition region
 		#self.friction[self.Re>=2000 and self.Re<4000] = self.frictionLam[self.Re>=2000 and self.Re<4000] 
 	
-#	def LambdaCalc(k,d,Q0):
-#		A = np.pi*d**2 / 4
-#		Re = rho * (Q0/A) *d / mu
+	def LambdaCalc(self):
+		rho = 998
+		mu = 1e-3
+		k = self.roughness
+		d = self.diameter
+		A = np.pi*self.diameter**2 / 4
+		Re = rho * (self.Q_0/A) *self.diameter / mu
+		
+		if Re<2000:
+			f = 64 / Re
+		elif Re>4000:
+			f = 0.25 / (np.log10(k / (3.7*d) + 5.74 / (Re**0.9))**2)
+		else:
+			R = Re/2000.
+			Y2 = k / (3.7*d) + 5.74 / (Re**0.9)
+			Y3 = -0.86859 *np.log(k / (3.7*d) + 5.74 / (4000**0.9))
 
-#		if Re<2000:
-#			f = 64 / Re
-#		elif Re>4000:
-#			f = 0.25 / (np.log10(k / (3.7*d) + 5.74 / (Re**0.9))**2)
-#		else:
-#			R = Re/2000.
-#			Y2 = k / (3.7*d) + 5.74 / (Re**0.9)
-#			Y3 = -0.86859 *np.log(k / (3.7*d) + 5.74 / (4000**0.9))
+			FA = Y3**-2
+			FB = FA*(2-0.00514215 / (Y2*Y3))
 
-#			FA = Y3**-2
-#			FB = FA*(2-0.00514215 / (Y2*Y3))
+			X1 = 7*FA - FB
+			X2 = 0.128 - 17*FA + 2.5*FB
+			X3 = -0.128 + 13*FA - 2*FB
+			X4 = R*(0.032 - 3*FA + 0.5*FB)
 
-#			X1 = 7*FA - FB
-#			X2 = 0.128 - 17*FA + 2.5*FB
-#			X3 = -0.128 + 13*FA - 2*FB
-#			X4 = R*(0.032 - 3*FA + 0.5*FB)
-
-#			f = X1 + R*(X2 + R*(X3 + X4))
-#	
-#		return f
+			f = X1 + R*(X2 + R*(X3 + X4))
+	
+		self.friction = f
 	
 			
 	def Wavespeed(self):

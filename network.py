@@ -3,7 +3,7 @@ import pylab as pp
 from epanettools import epanet2 as epa
 import time
 import networkx as nx
-
+import scipy.sparse as ss
 """ 
 
 
@@ -122,23 +122,158 @@ class Network(object):
 		self.link_lengths = []
 		self.link_dx = []
 		self.link_length_error = []
-		self.no_calc_points = 0
+		self.CPs = 0
+		self.pipes_State_Index = np.array([])
 
+		link_count = 0
 		for i in self.links:
 			try:
 				i.Q_0
+				
 			except:
 				print 'No steady-state data for link', i.Name
 				break
-
+			i.LambdaCalc()
 			self.link_lengths.append(float(i.length))	##Length of Link
 			i.dx = i.c*dt			
 			self.link_dx.append(i.c*dt)					##Nodal distance for link
-			i.NoTNodes = int(i.length / i.dx)			##Number of nodes for link
-			self.link_length_error.append(100.*abs(i.NoTNodes*i.dx - i.length)/i.length)	## Max discretisation error
-			i.B = i.c/(9.81*i.area)
-			i.TranNodesX = np.linspace(0,i.length,i.NoTNodes)
-			self.no_calc_points += (i.TranNodesX).size
+			i.NoTCPs = int(i.length / i.dx)			##Number of CPs for link
+			self.link_length_error.append(100.*abs(i.NoTCPs*i.dx - i.length)/i.length)	## Max discretisation error
+			i.B = i.c/(9.81*i.area)					## This is the basic calc constant 
+			i.R = i.friction*i.dx*i.Q_0 / (2*9.81*i.diameter*i.area**2)	## This is the basic friction cal which we can use if we assume that it is fixed throughout the calcualtions
+			i.TranCPsX = np.linspace(0,i.length,i.NoTCPs)	##	Generating the CPs
+			pipe_CP_index = np.ones(i.TranCPsX.size)*link_count
+
+			self.CPs += (i.TranCPsX).size	##working out the number of CPs
+			self.pipes_State_Index = np.hstack((self.pipes_State_Index,pipe_CP_index))	##adding in the link to the state index
+			
+			i.CP_Node1 = self.pipes_State_Index.size - (i.TranCPsX).size
+			i.CP_Node2 = self.pipes_State_Index.size -1
+			i.link_number = link_count	##Adding in the link number to the link object
+			link_count +=1
 		
-		self.X_Vector = (np.zeros((2*self.no_calc_points))).T
+		self.X_Vector = (np.zeros((2*self.CPs))).T #State Vector
+		self.U_Vector = (np.zeros((2*self.CPs))).T #Control Vector  (contains the demand values at each instance if not included in the state vector (which they could be and it would remain linear)  <- this should be step 2
+		#print self.pipes_State_Index,self.pipes_State_Index.size
 		
+
+		####  	Generating the Matrices Required for the prediction steps
+		self.A_Matrix = (ss.dok_matrix((2*self.CPs,2*self.CPs))) #Dynamics Evolution Matrix
+		self.P_Matrix = (ss.dok_matrix((2*self.CPs,2*self.CPs))) #State Covariance Matrix
+		self.Q_Matrix = (ss.dok_matrix((2*self.CPs,2*self.CPs))) #Uncertainty Covariance Matrix
+
+
+
+		###	Looping again to generate the actual values in the X_Vector and A matrix
+		for i in self.links:
+			self.X_Vector[i.CP_Node1:i.CP_Node2+1] = np.linspace(i.node1.H_0,i.node2.H_0,i.NoTCPs).reshape(1,i.NoTCPs)	### The inital Head in the state vector
+			self.X_Vector[self.CPs+i.CP_Node1:self.CPs+i.CP_Node2+1] = i.Q_0 #The initial Flow vectors
+			
+			#### The main sections along each pipe
+			for CP in range(i.CP_Node1+1,i.CP_Node2):
+				#print CP,self.CPs,CP+self.CPs+1
+				#Hp,Ha
+				self.A_Matrix[CP,CP-1] = 0.5
+				#Hp,Hb
+				self.A_Matrix[CP,CP+1] = 0.5
+				#Hp,Qa
+				self.A_Matrix[CP,CP+self.CPs-1] = 0.5*i.B - 0.5*i.R
+				#Hp,Qb
+				self.A_Matrix[CP,CP+self.CPs+1] = -0.5*i.B + 0.5*i.R
+				
+				#Qp,Ha
+				self.A_Matrix[CP+self.CPs,CP-1] = 1./(2*i.B)
+				#Qp,Hb
+				self.A_Matrix[CP+self.CPs,CP+1] = -1./(2*i.B)
+				#Qp,Qa
+				self.A_Matrix[CP+self.CPs,CP+self.CPs-1] = 0.5*(1-i.R/i.B)
+				#Qp,Qb
+				self.A_Matrix[CP+self.CPs,CP+self.CPs+1] = 0.5*(1-i.R/i.B)
+		
+		for i in self.nodes:
+			Bc = 0
+			Qext = i.demand
+			for k in i.pipesOut:
+				#print 'pOut',k.B
+				Bc += 1./k.B
+			for k in i.pipesIn:
+				#print 'pIn',k.B
+				Bc += 1./k.B
+			Bc = 1./Bc
+			print Bc
+			
+			if i.type == 'Reservoir':
+				for k in i.pipesIn:
+					#Hp,Hp
+					self.A_Matrix[k.CP_Node2,k.CP_Node2] = 1
+					#Qp,Hp
+					self.A_Matrix[k.CP_Node2+self.CPs,k.CP_Node2] = -1./k.B
+					#Qp,Ha
+					self.A_Matrix[k.CP_Node2+self.CPs,k.CP_Node2-1] = 1./k.B
+					#Qp,Qa
+					self.A_Matrix[k.CP_Node2+self.CPs,k.CP_Node2+self.CPs-1] = 1 - k.R/k.B
+
+				for k in i.pipesOut:
+					#Hp,Hp	
+					self.A_Matrix[k.CP_Node1,k.CP_Node1] = 1
+					#Qp,Hp
+					self.A_Matrix[k.CP_Node1+self.CPs,k.CP_Node1] = 1./k.B
+					#Qp,Hb
+					self.A_Matrix[k.CP_Node1+self.CPs,k.CP_Node1+1] = -1./k.B
+					#Qp,Qb
+					self.A_Matrix[k.CP_Node1+self.CPs,k.CP_Node1+self.CPs+1] = 1 - k.R/k.B
+
+			if i.type == 'Node':
+				for k in i.pipesIn+i.pipesOut:	##Creation of the Cc element required for both Hp and Qp
+					for j in i.pipesIn:
+						#print k.CP_Node2,j.CP_Node2
+						#Hp,Ha
+						print k.CP_Node2,j.CP_Node2-1
+						self.A_Matrix[k.CP_Node2,j.CP_Node2-1] = Bc/j.B
+						#Hp,Qa
+						self.A_Matrix[k.CP_Node2,j.CP_Node2+self.CPs-1] = Bc*(1-j.R/j.B)
+						#Qp,Ha
+						self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node2] = Bc/j.B
+						#Qp,Qa
+						self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node2+self.CPs] = Bc*(1-j.R/j.B)
+
+					for j in i.pipesOut:
+						#Hp,Hb
+						self.A_Matrix[k.CP_Node1,j.CP_Node1+1] = Bc/j.B
+						#Hp,Qb
+						self.A_Matrix[k.CP_Node1,j.CP_Node1+self.CPs+1] = Bc*(-1+j.R/j.B)
+						#Qp,Hb
+						self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1] = Bc/j.B
+						#Qp,Qb
+						self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1+self.CPs] = Bc*(-1+j.R/j.B)
+
+				for k in i.pipesIn:
+					self.U_Vector[k.CP_Node2] = -Bc * Qext #Adding the control to the head node				
+					self.U_Vector[k.CP_Node2+self.CPs] = Bc * Qext /k.B#Adding the control 
+					#Qp
+					self.A_Matrix[k.CP_Node2+self.CPs,:] *= -1./k.B
+					#Qp,Hp
+					#self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node2] += -1./k.B
+#					#Qp,Ha
+					self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node2-1] += 1./k.B
+#					#Qp,Qa
+					self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node2+self.CPs-1] += (1-k.R/k.B)
+					
+					
+
+				for k in i.pipesOut:
+					self.U_Vector[k.CP_Node1] = -Bc* Qext #Adding the control to the head node				
+					self.U_Vector[k.CP_Node1+self.CPs] = -Bc * Qext / k.B #Adding the control 
+					#Qp
+					self.A_Matrix[k.CP_Node2+self.CPs,:] *= 1./k.B
+					#Qp,Hp
+					#self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1] += 1./k.B
+					#Qp,Hb
+					self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1+1] += -1./k.B
+					#Qp,Qb
+					self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1+self.CPs+1] += -(1+k.R/k.B)
+
+
+
+
+
