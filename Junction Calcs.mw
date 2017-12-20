@@ -84,8 +84,17 @@
 <Highlighter-style name="Highlighter 2" pen-color="[255,204,0]" pen-height="14.0" pen-width="14.0" pen-opacity="0.8"/>
 </Styles>
 <Startup-Code startupcode=""/>
+<Task-table>
+    <Task-category name="&lt;default&gt;"/>
+</Task-table>
 <Task/><Presentation-Block>
-<Group view="presentation" inline-output="false" labelreference="L1" drawlabel="true" applyint="true" applyrational="true" applyexponent="false">
+<Group view="presentation" hide-input="false" hide-output="false" inline-output="false" labelreference="L1" drawlabel="true" applyint="true" applyrational="true" applyexponent="false">
+<Input><Text-field style="Text" layout="Normal"><Equation executable="true" style="2D Math" input-equation="Cp := B*Qa-Qa*R+Ha" display="LUklbXJvd0c2Iy9JK21vZHVsZW5hbWVHNiJJLFR5cGVzZXR0aW5nR0koX3N5c2xpYkdGJzYxLUkjbWlHRiQ2JlEjQ3BGJy8lJ2l0YWxpY0dRJXRydWVGJy8lMGZvbnRfc3R5bGVfbmFtZUdRKTJEfklucHV0RicvJSxtYXRodmFyaWFudEdRJ2l0YWxpY0YnLUkjbW9HRiQ2LlEqJmNvbG9uZXE7RidGMi9GNlEnbm9ybWFsRicvJSZmZW5jZUdRJmZhbHNlRicvJSpzZXBhcmF0b3JHRkAvJSlzdHJldGNoeUdGQC8lKnN5bW1ldHJpY0dGQC8lKGxhcmdlb3BHRkAvJS5tb3ZhYmxlbGltaXRzR0ZALyUnYWNjZW50R0ZALyUnbHNwYWNlR1EsMC4yNzc3Nzc4ZW1GJy8lJ3JzcGFjZUdGTy1GLDYmUSNIYUYnRi9GMkY1LUY5Ni5RIn5GJ0YyRjxGPkZBRkNGRUZHRklGSy9GTlEmMC4wZW1GJy9GUUZZLUY5Ni5RIitGJ0YyRjxGPkZBRkNGRUZHRklGSy9GTlEsMC4yMjIyMjIyZW1GJy9GUUZpbkZVLUYsNiZRIkJGJ0YvRjJGNS1GOTYuUScmc2RvdDtGJ0YyRjxGPkZBRkNGRUZHRklGS0ZYRlotRiw2JlEjUWFGJ0YvRjJGNS1GOTYuUSgmbWludXM7RidGMkY8Rj5GQUZDRkVGR0ZJRktGaG5Gam4tRiw2JlEiUkYnRi9GMkY1Rl5vRmFvLyUrZXhlY3V0YWJsZUdGQEY8">PkkjQ3BHNiIsKComSSJCR0YkIiIiSSNRYUdGJEYoRigqJkYpRihJIlJHRiRGKCEiIkkjSGFHRiRGKA==</Equation></Text-field>
+</Input>
+<Output><Text-field style="2D Output" layout="Maple Output"><Equation executable="false" style="2D Output" display="LUklbXJvd0c2Iy9JK21vZHVsZW5hbWVHNiJJLFR5cGVzZXR0aW5nR0koX3N5c2xpYkdGJzYoLUYjNiYtSSNtaUdGJDYlUSJCRicvJSdpdGFsaWNHUSV0cnVlRicvJSxtYXRodmFyaWFudEdRJ2l0YWxpY0YnLUkjbW9HRiQ2LVExJkludmlzaWJsZVRpbWVzO0YnL0Y1USdub3JtYWxGJy8lJmZlbmNlR1EmZmFsc2VGJy8lKnNlcGFyYXRvckdGPy8lKXN0cmV0Y2h5R0Y/LyUqc3ltbWV0cmljR0Y/LyUobGFyZ2VvcEdGPy8lLm1vdmFibGVsaW1pdHNHRj8vJSdhY2NlbnRHRj8vJSdsc3BhY2VHUSYwLjBlbUYnLyUncnNwYWNlR0ZOLUYuNiVRI1FhRidGMUY0RjstRjg2LVEoJm1pbnVzO0YnRjtGPUZARkJGREZGRkhGSi9GTVEsMC4yMjIyMjIyZW1GJy9GUEZYLUYjNiZGUUY3LUYuNiVRIlJGJ0YxRjRGOy1GODYtUSIrRidGO0Y9RkBGQkZERkZGSEZKRldGWS1GLjYlUSNIYUYnRjFGNEY7">LCgqJkkiQkc2IiIiIkkjUWFHRiVGJkYmKiZGJ0YmSSJSR0YlRiYhIiJJI0hhR0YlRiY=</Equation></Text-field>
+</Output>
+</Group></Presentation-Block><Presentation-Block>
+<Group view="presentation" inline-output="false" labelreference="L2" drawlabel="true" applyint="true" applyrational="true" applyexponent="false">
 <Input><Text-field style="Text" layout="Normal"><Equation executable="true" style="2D Math" input-equation="" display="LUklbXJvd0c2Iy9JK21vZHVsZW5hbWVHNiJJLFR5cGVzZXR0aW5nR0koX3N5c2xpYkdGJzYlLUkjbWlHRiQ2I1EhRicvJStleGVjdXRhYmxlR1EmZmFsc2VGJy8lLG1hdGh2YXJpYW50R1Enbm9ybWFsRic=">JSFH</Equation></Text-field>
 </Input>
 </Group></Presentation-Block>
