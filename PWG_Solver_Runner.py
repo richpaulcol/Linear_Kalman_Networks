@@ -11,44 +11,19 @@ FileName = 'Networks/hanoi2.inp'
 Net = Import_EPANet_Geom(FileName)
 #Net.geom_Plot(plot_Node_Names = True)
 Net.Import_EPANet_Results()
-Net.Constant_Wavespeed(100)
-Net.Initialise_Linear_Kalman(0.1)
+Net.Constant_Wavespeed(1000)
+Net.Initialise_Linear_Kalman(0.05)
 
 print 'Length Error',Net.link_length_error
-
-Plot = True
-if Plot == True:
-	pp.figure()
-	pp.subplot(211)
-	pp.plot(Net.X_Vector[:Net.X_Vector.size/2])
-	pp.subplot(212)
-	pp.plot(Net.X_Vector[Net.X_Vector.size/2:])
-
-
-print Net.X_Vector[Net.X_Vector.size/2:]
 X0 = Net.X_Vector
 
-for i in range(10):
-	Net.X_Vector = Net.A_Matrix.dot(Net.X_Vector)+Net.U_Vector
-Net.X_Vector[0] = 90
-for j in range(10):
-	for i in range(100):
-		Net.X_Vector = Net.A_Matrix.dot(Net.X_Vector)+Net.U_Vector
+#print Net.X_Vector[Net.X_Vector.size/2:]
+#Net.initiating_Uncertainty()
+Net.initial_BC_Uncertainty_Only(0.1)
+Net.kalman_iteration(10/Net.dt)
 
-	#print Net.X_Vector[Net.X_Vector.size/2:]
+#Net.node_Pressure_Plot(['UpStream','Mid','DownStream'],plot_uncertainty = 1)
+Net.node_Pressure_Plot(['1','4'],plot_uncertainty = 1,plot_all = 1)
+Net.node_Pressure_Plot(['4'],plot_uncertainty = 1,plot_all = 0)
+#A = Net.A_Matrix.todense()
 
-	if Plot == True:
-		pp.subplot(211)
-		pp.plot(Net.X_Vector[:Net.X_Vector.size/2])
-		pp.subplot(212)
-		pp.plot(Net.X_Vector[Net.X_Vector.size/2:])
-
-
-		pp.show()
-
-A = Net.A_Matrix.todense()
-#summ = 0
-#for i in range(5):
-#	print A[3,i]*X0[i]
-#	summ += A[3,i]*X0[i]
-#	#print summ

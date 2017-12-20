@@ -42,7 +42,7 @@ def Import_EPANet_Geom(inp_filename):
 	Pipe_idx = {}
 	Valve_idx = {}
 	Pump_idx = {}
-	
+	NodeCounter = 0
 	
 	#####
 	##	Running through the input file to input the Node Coordinates
@@ -60,7 +60,8 @@ def Import_EPANet_Geom(inp_filename):
                 if section == '[COORDINATES]':          
                 	## 	Create a new Node object with inputs (name, xPos, yPos)
                 	new_Node = Node(vals[0], float(vals[1]), float(vals[2]))
-                	
+                	new_Node.number = NodeCounter
+			NodeCounter += 1
                 	##	Adding the new node to the Nodes list and the Directory of id's
                 	Nodes.append(new_Node)
                 	Node_idx[new_Node.Name] = new_Node
@@ -83,6 +84,7 @@ def Import_EPANet_Geom(inp_filename):
                 	try:
                 		Node_idx[vals[0]].zPos = float(vals[1])
                 		Node_idx[vals[0]].demand = float(vals[2])/1000.
+				Node_idx[vals[0]].idx = vals[0]
 		        except:
 		        	#print vals[0]
 #		        	new_Node = Node(vals[0], 0, 0)
@@ -96,6 +98,7 @@ def Import_EPANet_Geom(inp_filename):
                 		Node_idx[vals[0]].H_0 = float(vals[1])
                 		Node_idx[vals[0]].TranH = [float(vals[1])]
                 		Node_idx[vals[0]].type = 'Reservoir'
+				Node_idx[vals[0]].idx = vals[0]
 		        except:
 		        	#print vals[0]
 		        	continue
@@ -104,6 +107,7 @@ def Import_EPANet_Geom(inp_filename):
 			try:
                 		#Node_idx[vals[0]].Head = vals[1]
                 		Node_idx[vals[0]].type = 'Tank'
+				Node_idx[vals[0]].idx = vals[0]
 		        except:
 		        	#print vals[0]
 		        	continue
