@@ -3,20 +3,21 @@
 
 [JUNCTIONS]
 ;ID              	Elev        	Demand      	Pattern         
- DownStream      	0           	1           	                	;
- Mid             	0           	3           	                	;
+; DownStream      	0           	1           	                	;
+ Mid             	0           	30           	                	;
 
 [RESERVOIRS]
 ;ID              	Head        	Pattern         
  UpStream        	100         	                	;
+DownStream		100
 
 [TANKS]
 ;ID              	Elevation   	InitLevel   	MinLevel    	MaxLevel    	Diameter    	MinVol      	VolCurve
 
 [PIPES]
 ;ID              	Node1           	Node2           	Length      	Diameter    	Roughness   	MinorLoss   	Status
- 1               	UpStream        	Mid             	100         	100         	1           	0           	Open  	;
- 2               	Mid             	DownStream      	100         	100         	1           	0           	Open  	;
+ 1               	UpStream        	Mid             	90         	100         	1           	0           	Open  	;
+ 2               	Mid             	DownStream      	90         	100         	1           	0           	Open  	;
 
 [PUMPS]
 ;ID              	Node1           	Node2           	Parameters
@@ -98,7 +99,7 @@
  Specific Gravity   	1
  Viscosity          	1
  Trials             	40
- Accuracy           	0.001
+ Accuracy           	0.0001
  CHECKFREQ          	2
  MAXCHECK           	10
  DAMPLIMIT          	0

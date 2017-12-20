@@ -96,13 +96,14 @@ class Network(object):
 			ret,Length=epa.ENgetlinkvalue(index,epa.EN_LENGTH)
 			ret,Diameter=epa.ENgetlinkvalue(index,epa.EN_DIAMETER)
 			#print Headloss,Length,Diameter,V0
-			print 2*9.81*(Headloss/1000.)*Diameter / (Length * V0**2)
+			#print 2*9.81*(Headloss/1000.)*Diameter / (Length * V0**2)
 			
 			try:
 			
 				self.link_idx[idx].Q_0 = float(Q0)/1000. #Convert to m^3/s
 				self.link_idx[idx].V_0 = float(V0)
 				self.link_idx[idx].FF_0 = float(2*9.81*(Headloss/1000.)*Diameter / (Length * V0**2))
+				#self.link_idx[idx].R = float((Headloss/1000.) / (np.pi*Diameter/4. * Length * V0))
 			except:
 				print 'Problem getting Flow or Velocity for link:', idx
 				continue	
@@ -135,17 +136,18 @@ class Network(object):
 				break
 
 			### Ensuring the friction calc is done
-			#i.LambdaCalc()
-			i.friction = i.FF_0
+			#i.LambdaCalc()		#Usng the Friciton model as calculated from EPANet manual
+			i.friction = i.FF_0 	#Using data back calculated from EPANet
 
 			self.link_lengths.append(float(i.length))	##Length of Link
 			i.dx = i.c*dt			
 			self.link_dx.append(i.c*dt)					##Nodal distance for link
-			i.NoTCPs = int(i.length / i.dx)			##Number of CPs for link
-			self.link_length_error.append(100.*abs(i.NoTCPs*i.dx - i.length)/i.length)	## Max discretisation error
+			i.NoCPs = int(round(i.length / i.dx)+1)			##Number of CPs for link
+			self.link_length_error.append(100.*abs((i.NoCPs-1)*i.dx - i.length)/i.length)	## Max discretisation error
 			i.B = i.c/(9.81*i.area)					## This is the basic calc constant 
-			i.R = i.friction*i.dx*i.Q_0 / (2*9.81*i.diameter*i.area**2)	## This is the basic friction cal which we can use if we assume that it is fixed throughout the calcualtions
-			i.TranCPsX = np.linspace(0,i.length,i.NoTCPs)	##	Generating the CPs
+			i.R = i.friction*i.dx*abs(i.Q_0) / (2*9.81*i.diameter*i.area**2)	## This is the basic friction cal which we can use if we assume that it is fixed throughout the calcualtions
+			#i.R = i.R * i.dx
+			i.TranCPsX = np.linspace(0,i.length,i.NoCPs)	##	Generating the CPs
 			pipe_CP_index = np.ones(i.TranCPsX.size)*link_count
 
 			self.CPs += (i.TranCPsX).size	##working out the number of CPs
@@ -170,12 +172,12 @@ class Network(object):
 
 		###	Looping again to generate the actual values in the X_Vector and A matrix
 		for i in self.links:
-			self.X_Vector[i.CP_Node1:i.CP_Node2+1] = np.linspace(i.node1.H_0,i.node2.H_0,i.NoTCPs).reshape(1,i.NoTCPs)	### The inital Head in the state vector
+			self.X_Vector[i.CP_Node1:i.CP_Node2+1] = np.linspace(i.node1.H_0,i.node2.H_0,i.NoCPs).reshape(1,i.NoCPs)	### The inital Head in the state vector
 			self.X_Vector[self.CPs+i.CP_Node1:self.CPs+i.CP_Node2+1] = i.Q_0 #The initial Flow vectors
 			
 			#### The main sections along each pipe
 			for CP in range(i.CP_Node1+1,i.CP_Node2):
-				#print CP,self.CPs,CP+self.CPs+1
+				#print 'Central',CP,self.CPs,CP+self.CPs+1
 				#Hp,Ha
 				self.A_Matrix[CP,CP-1] = 0.5
 				#Hp,Hb
@@ -186,16 +188,16 @@ class Network(object):
 				self.A_Matrix[CP,CP+self.CPs+1] = -0.5*i.B + 0.5*i.R
 				
 				#Qp,Ha
-				self.A_Matrix[CP+self.CPs,CP-1] = 1./(2*i.B)
+				self.A_Matrix[CP+self.CPs,CP-1] = 1./(2.*i.B)
 				#Qp,Hb
-				self.A_Matrix[CP+self.CPs,CP+1] = -1./(2*i.B)
+				self.A_Matrix[CP+self.CPs,CP+1] = -1./(2.*i.B)
 				#Qp,Qa
 				self.A_Matrix[CP+self.CPs,CP+self.CPs-1] = 0.5*(1-i.R/i.B)
 				#Qp,Qb
 				self.A_Matrix[CP+self.CPs,CP+self.CPs+1] = 0.5*(1-i.R/i.B)
 		
 		for i in self.nodes:
-			print i.type
+			#print i.type
 			Bc = 0
 			Qext = i.demand
 			for k in i.pipesOut:
@@ -205,10 +207,12 @@ class Network(object):
 				#print 'pIn',k.B
 				Bc += 1./k.B
 			Bc = 1./Bc
-			print Bc,k.B
+			#print Bc,k.B
 			
 			if i.type == 'Reservoir':
+				#print 'In',i.pipesIn,'Out',i.pipesOut
 				for k in i.pipesIn:
+					#print 'Reservoir pipesIn',k.CP_Node2,k.CP_Node2+self.CPs,
 					#Hp,Hp
 					self.A_Matrix[k.CP_Node2,k.CP_Node2] = 1
 					#Qp,Hp
@@ -219,6 +223,7 @@ class Network(object):
 					self.A_Matrix[k.CP_Node2+self.CPs,k.CP_Node2+self.CPs-1] = 1. - k.R/k.B
 
 				for k in i.pipesOut:
+					#print 'Reservoir pipesOut',k.CP_Node1,k.CP_Node1+self.CPs,1. - k.R/k.B
 					#Hp,Hp	
 					self.A_Matrix[k.CP_Node1,k.CP_Node1] = 1
 					#Qp,Hp
@@ -229,10 +234,10 @@ class Network(object):
 					self.A_Matrix[k.CP_Node1+self.CPs,k.CP_Node1+self.CPs+1] = 1. - k.R/k.B
 
 			if i.type == 'Node':
-				
-				for k in i.pipesIn+i.pipesOut:	##Creation of the Cc element required for both Hp and Qp
+				#print 'In',i.pipesIn,'Out',i.pipesOut
+				for k in i.pipesIn:	##Creation of the Cc element required for both Hp and Qp
 					for j in i.pipesIn:
-						#print k.CP_Node2,j.CP_Node2
+						#print 'Node pipesIn',k.CP_Node2,j.CP_Node2,j.CP_Node2-1,j.CP_Node2+self.CPs-1
 						#Hp,Ha
 						self.A_Matrix[k.CP_Node2,j.CP_Node2-1] = Bc/j.B
 						#Hp,Qa
@@ -243,44 +248,65 @@ class Network(object):
 						self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node2+self.CPs-1] = Bc*(1-j.R/j.B)
 
 					for j in i.pipesOut:
-						#print 'Hello'
+						#print 'Node pipesOut',k.CP_Node2,j.CP_Node1,j.CP_Node1+1,j.CP_Node1+self.CPs+1
+						#Hp,Hb
+						self.A_Matrix[k.CP_Node2,j.CP_Node1+1] = Bc/j.B
+						#Hp,Qb
+						self.A_Matrix[k.CP_Node2,j.CP_Node1+self.CPs+1] = -Bc*(1-j.R/j.B)
+						#Qp,Hb
+						self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node1+1] = Bc/j.B
+						#Qp,Qb
+						self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node1+self.CPs+1] = -Bc*(1-j.R/j.B)
+
+				for k in i.pipesOut:	##Creation of the Cc element required for both Hp and Qp
+					for j in i.pipesIn:
+						#print 'Node pipesIn',k.CP_Node1,j.CP_Node2,j.CP_Node2-1,j.CP_Node2+self.CPs-1
+						#Hp,Ha
+						self.A_Matrix[k.CP_Node1,j.CP_Node2-1] = Bc/j.B
+						#Hp,Qa
+						self.A_Matrix[k.CP_Node1,j.CP_Node2+self.CPs-1] = Bc*(1-j.R/j.B)
+						#Qp,Ha
+						self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node2-1] = Bc/j.B
+						#Qp,Qa
+						self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node2+self.CPs-1] = Bc*(1-j.R/j.B)
+
+					for j in i.pipesOut:
+						#print 'Node pipesOut',k.CP_Node1,j.CP_Node1,j.CP_Node1+1,j.CP_Node1+self.CPs+1
 						#Hp,Hb
 						self.A_Matrix[k.CP_Node1,j.CP_Node1+1] = Bc/j.B
 						#Hp,Qb
-						self.A_Matrix[k.CP_Node1,j.CP_Node1+self.CPs+1] = Bc*(-1+j.R/j.B)
+						self.A_Matrix[k.CP_Node1,j.CP_Node1+self.CPs+1] = -Bc*(1-j.R/j.B)
 						#Qp,Hb
 						self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1+1] = Bc/j.B
 						#Qp,Qb
-						self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1+self.CPs+1] = Bc*(-1+j.R/j.B)
+						self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1+self.CPs+1] = -Bc*(1-j.R/j.B)
 
 				for k in i.pipesIn:
-					print Bc,k.B,Bc * Qext / k.B
+					#print Bc,k.B,Bc * Qext / k.B
 					#print 'Dave'
+					#print 'Final Node pipesIn',k.CP_Node2,k.CP_Node2+self.CPs,j.CP_Node2,j.CP_Node2-1,j.CP_Node2+self.CPs-1
 					self.U_Vector[k.CP_Node2] = -Bc * Qext #Adding the control to the head node				
 					self.U_Vector[k.CP_Node2+self.CPs] = Bc * Qext /k.B#Adding the control 
 					#Qp
 					self.A_Matrix[k.CP_Node2+self.CPs,:] *= -1./k.B
-					#Qp,Hp
-					#self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node2] += -1./k.B
 #					#Qp,Ha
-					self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node2-1] += 1./k.B
+					self.A_Matrix[k.CP_Node2+self.CPs,k.CP_Node2-1] += 1./k.B
 ##					#Qp,Qa
-					self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node2+self.CPs-1] += (1-k.R/k.B)
+					self.A_Matrix[k.CP_Node2+self.CPs,k.CP_Node2+self.CPs-1] += (1-k.R/k.B)
 					
 					
 
 				for k in i.pipesOut:
-					print Bc,k.B,-Bc * Qext / k.B
+					#print Bc,k.B,-Bc * Qext / k.B
+					#print 'Final Node pipesOut',k.CP_Node1,k.CP_Node1+self.CPs,j.CP_Node1+1,j.CP_Node1+self.CPs+1
 					self.U_Vector[k.CP_Node1] = -Bc* Qext #Adding the control to the head node				
 					self.U_Vector[k.CP_Node1+self.CPs] = -Bc * Qext / k.B #Adding the control 
 					#Qp
 					self.A_Matrix[k.CP_Node1+self.CPs,:] *= 1./k.B
-					#Qp,Hp
-					#self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1] += 1./k.B
 					#Qp,Hb
-					self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1+1] += -1./k.B
+					self.A_Matrix[k.CP_Node1+self.CPs,k.CP_Node1+1] += -1./k.B
 					#Qp,Qb
-					self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1+self.CPs+1] += (1-k.R/k.B)
+					self.A_Matrix[k.CP_Node1+self.CPs,k.CP_Node1+self.CPs+1] += (1-k.R/k.B)
 
 
 
