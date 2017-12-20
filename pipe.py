@@ -97,7 +97,7 @@ class Pipe:
 
 			f = X1 + R*(X2 + R*(X3 + X4))
 	
-		self.friction = f
+		self.friction = abs(f)
 	
 			
 	def Wavespeed(self):

@@ -56,12 +56,12 @@ class Network(object):
 	
 	def Import_EPANet_Results(self):	
 		ret = epa.ENopen(self.filename,self.filename[:-3]+'rep',self.filename[:-3]+'out')
-		print ret
+		#print ret
 		####	Opening the hydraulics results
 		ret = epa.ENopenH()
-		print ret
+		#print ret
 		ret = epa.ENinitH(0)
-		print ret
+		#print ret
 		####	Running the Hydraulics Solver
 		epa.ENrunH()
 		
@@ -96,7 +96,7 @@ class Network(object):
 			ret,Length=epa.ENgetlinkvalue(index,epa.EN_LENGTH)
 			ret,Diameter=epa.ENgetlinkvalue(index,epa.EN_DIAMETER)
 			#print Headloss,Length,Diameter,V0
-			#print 2*9.81*(Headloss/1000.)*Diameter / (Length * V0**2)
+			print 2*9.81*(Headloss/1000.)*Diameter / (Length * V0**2)
 			
 			try:
 			
@@ -133,7 +133,11 @@ class Network(object):
 			except:
 				print 'No steady-state data for link', i.Name
 				break
-			i.LambdaCalc()
+
+			### Ensuring the friction calc is done
+			#i.LambdaCalc()
+			i.friction = i.FF_0
+
 			self.link_lengths.append(float(i.length))	##Length of Link
 			i.dx = i.c*dt			
 			self.link_dx.append(i.c*dt)					##Nodal distance for link
@@ -191,6 +195,7 @@ class Network(object):
 				self.A_Matrix[CP+self.CPs,CP+self.CPs+1] = 0.5*(1-i.R/i.B)
 		
 		for i in self.nodes:
+			print i.type
 			Bc = 0
 			Qext = i.demand
 			for k in i.pipesOut:
@@ -200,7 +205,7 @@ class Network(object):
 				#print 'pIn',k.B
 				Bc += 1./k.B
 			Bc = 1./Bc
-			print Bc
+			print Bc,k.B
 			
 			if i.type == 'Reservoir':
 				for k in i.pipesIn:
@@ -211,7 +216,7 @@ class Network(object):
 					#Qp,Ha
 					self.A_Matrix[k.CP_Node2+self.CPs,k.CP_Node2-1] = 1./k.B
 					#Qp,Qa
-					self.A_Matrix[k.CP_Node2+self.CPs,k.CP_Node2+self.CPs-1] = 1 - k.R/k.B
+					self.A_Matrix[k.CP_Node2+self.CPs,k.CP_Node2+self.CPs-1] = 1. - k.R/k.B
 
 				for k in i.pipesOut:
 					#Hp,Hp	
@@ -221,33 +226,36 @@ class Network(object):
 					#Qp,Hb
 					self.A_Matrix[k.CP_Node1+self.CPs,k.CP_Node1+1] = -1./k.B
 					#Qp,Qb
-					self.A_Matrix[k.CP_Node1+self.CPs,k.CP_Node1+self.CPs+1] = 1 - k.R/k.B
+					self.A_Matrix[k.CP_Node1+self.CPs,k.CP_Node1+self.CPs+1] = 1. - k.R/k.B
 
 			if i.type == 'Node':
+				
 				for k in i.pipesIn+i.pipesOut:	##Creation of the Cc element required for both Hp and Qp
 					for j in i.pipesIn:
 						#print k.CP_Node2,j.CP_Node2
 						#Hp,Ha
-						print k.CP_Node2,j.CP_Node2-1
 						self.A_Matrix[k.CP_Node2,j.CP_Node2-1] = Bc/j.B
 						#Hp,Qa
 						self.A_Matrix[k.CP_Node2,j.CP_Node2+self.CPs-1] = Bc*(1-j.R/j.B)
 						#Qp,Ha
-						self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node2] = Bc/j.B
+						self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node2-1] = Bc/j.B
 						#Qp,Qa
-						self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node2+self.CPs] = Bc*(1-j.R/j.B)
+						self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node2+self.CPs-1] = Bc*(1-j.R/j.B)
 
 					for j in i.pipesOut:
+						#print 'Hello'
 						#Hp,Hb
 						self.A_Matrix[k.CP_Node1,j.CP_Node1+1] = Bc/j.B
 						#Hp,Qb
 						self.A_Matrix[k.CP_Node1,j.CP_Node1+self.CPs+1] = Bc*(-1+j.R/j.B)
 						#Qp,Hb
-						self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1] = Bc/j.B
+						self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1+1] = Bc/j.B
 						#Qp,Qb
-						self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1+self.CPs] = Bc*(-1+j.R/j.B)
+						self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1+self.CPs+1] = Bc*(-1+j.R/j.B)
 
 				for k in i.pipesIn:
+					print Bc,k.B,Bc * Qext / k.B
+					#print 'Dave'
 					self.U_Vector[k.CP_Node2] = -Bc * Qext #Adding the control to the head node				
 					self.U_Vector[k.CP_Node2+self.CPs] = Bc * Qext /k.B#Adding the control 
 					#Qp
@@ -256,24 +264,57 @@ class Network(object):
 					#self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node2] += -1./k.B
 #					#Qp,Ha
 					self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node2-1] += 1./k.B
-#					#Qp,Qa
+##					#Qp,Qa
 					self.A_Matrix[k.CP_Node2+self.CPs,j.CP_Node2+self.CPs-1] += (1-k.R/k.B)
 					
 					
 
 				for k in i.pipesOut:
+					print Bc,k.B,-Bc * Qext / k.B
 					self.U_Vector[k.CP_Node1] = -Bc* Qext #Adding the control to the head node				
 					self.U_Vector[k.CP_Node1+self.CPs] = -Bc * Qext / k.B #Adding the control 
 					#Qp
-					self.A_Matrix[k.CP_Node2+self.CPs,:] *= 1./k.B
+					self.A_Matrix[k.CP_Node1+self.CPs,:] *= 1./k.B
 					#Qp,Hp
 					#self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1] += 1./k.B
 					#Qp,Hb
 					self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1+1] += -1./k.B
 					#Qp,Qb
-					self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1+self.CPs+1] += -(1+k.R/k.B)
+					self.A_Matrix[k.CP_Node1+self.CPs,j.CP_Node1+self.CPs+1] += (1-k.R/k.B)
 
 
 
 
 
+
+	######
+	##	Plotting the network configuration
+	def geom_Plot(self,plot_Node_Names = 0):
+		pp.figure()
+		pp.title('Network Geometry')
+		for i in self.nodes:
+			if i.type == 'Node':
+				symbol = 'o'
+				size = 20
+			elif i.type == 'Reservoir':
+				symbol = 's'
+				size = 40
+			elif i.type == 'Tank':
+				symbol = (5,2)
+				size = 40	
+				
+			pp.scatter([i.xPos],[i.yPos],marker = symbol,s = size,c='k')
+			if plot_Node_Names != 0:
+				pp.annotate(i.Name,(i.xPos,i.yPos))
+			
+		for i in self.pipes:
+			pp.plot([i.x1,i.x2],[i.y1,i.y2],'k')
+			
+		for i in self.valves:
+			pp.plot([i.x1,i.x2],[i.y1,i.y2],'r')
+			
+		for i in self.pumps:
+			pp.plot([i.x1,i.x2],[i.y1,i.y2],'g')
+		pp.axis('equal')
+		pp.show()
+		
