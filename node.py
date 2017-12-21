@@ -1,5 +1,5 @@
 import numpy as np
-import pylab as pp
+#import pylab as pp
 
 class Node:
 	def __init__(self,node_Name,xPos,yPos,zPos = 0,Demand = 0.0):

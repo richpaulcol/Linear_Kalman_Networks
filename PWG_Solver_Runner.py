@@ -1,20 +1,39 @@
 import pylab as pp
 import numpy as np
 from PWG_EPA_tools import *
+import time
+
+import Transient_Iterator as TI
 
 
+StartTime = time.time()
+
+FileName = 'Networks/1Pipe.inp'
 FileName = 'Networks/hanoi2.inp'
+#FileName = 'Networks/1PipeReversed.inp'
+#FileName = 'Networks/2Pipes.inp'
 
 Net = Import_EPANet_Geom(FileName)
 #Net.geom_Plot(plot_Node_Names = True)
 Net.Import_EPANet_Results()
-Net.Constant_Wavespeed(500)
-Net.Initialise_Linear_Kalman(0.1)
-#Net.Control_Input('Trials/StochasticDemandsPWGInput.csv')
-#Net.MOC_Run(1000)
-##Net.MOC_Run(86350)
-##Net.geom_Plot(plot_Node_Names = True)
-#Net.transient_Node_Plot(['6','10','13','16','21','24','31'])
+Net.Constant_Wavespeed(1000)
+Net.Initialise_Linear_Kalman(0.05)
 
+print 'Length Error',Net.link_length_error
+X0 = Net.X_Vector
+
+#print Net.X_Vector[Net.X_Vector.size/2:]
+#Net.initiating_Uncertainty()
+Net.initial_BC_Uncertainty_Only(0.01)
+#Net.kalman_iteration(10/Net.dt)
+Net.times,Net.X_Vector,Net.P_Matrix,Net.Heads,Net.Demands,Net.P = TI.kalman_iteration(Net.X_Vector,Net.A_Matrix,Net.TransposeA,Net.P_Matrix,Net.U_Vector,Net.Q_Matrix,Net.nodal_CPs,Net.CPs,10/Net.dt,Net.dt)
+
+#Net.node_Pressure_Plot(['UpStream','Mid','DownStream'],plot_uncertainty = 1)
+#Net.node_Pressure_Plot(['1','4'],plot_uncertainty = 1,plot_all = 1)
+#Net.node_Pressure_Plot(['2'],plot_uncertainty = 1,plot_all = 0)
+#A = Net.A_Matrix.todense()
+
+EndTime = time.time()
+print "Run Time %0.3f (s) " % (EndTime-StartTime)
 
 

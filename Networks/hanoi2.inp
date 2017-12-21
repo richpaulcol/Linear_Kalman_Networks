@@ -19,11 +19,11 @@ Hanoi example by Fujiwara and Khang, Water Resources Research, 1990, Modified by
  15              	0           	0           	                	;
  16              	0           	0           	                	;
  17              	0           	0           	                	;
- 18              	0           	0          	                	;
+ 18              	0           	0           	                	;
  19              	0           	0           	                	;
  20              	0           	0           	                	;
  21              	0           	0           	                	;
- 22              	0           	0           	                	;
+ 22              	0           	1           	                	;
  23              	0           	0           	                	;
  24              	0           	0           	                	;
  25              	0           	0           	                	;
@@ -44,40 +44,40 @@ Hanoi example by Fujiwara and Khang, Water Resources Research, 1990, Modified by
 
 [PIPES]
 ;ID              	Node1           	Node2           	Length      	Diameter    	Roughness   	MinorLoss   	Status
- 1               	1               	2               	100         	100         	3e-05     	0           	open  	;	
- 2               	2               	3               	1350        	100         	3e-05     	0           	open  	;
- 3               	3               	4               	900         	100         	3e-05     	0           	open  	;
- 4               	4               	5               	1150        	100         	3e-05     	0           	open  	;
- 5               	5               	6               	1450        	100         	3e-05     	0           	open  	;
- 6               	6               	7               	450         	100         	3e-05     	0           	open  	;
- 7               	7               	8               	850         	100         	3e-05     	0           	open  	;
- 8               	8               	9               	850         	100         	3e-05     	0           	open  	;
- 9               	9               	10              	800         	100         	3e-05     	0           	open  	;
- 10              	10              	11              	950         	100         	3e-05     	0           	open  	;
- 11              	11              	12              	1200        	100         	3e-05     	0           	open  	;
- 12              	12              	13              	3500        	100         	3e-05     	0           	open  	;
- 13              	10              	14              	800         	100         	3e-05     	0           	open  	;
- 14              	14              	15              	500         	100         	3e-05     	0           	open  	;
- 15              	15              	16              	550         	100         	3e-05     	0           	open  	;
- 16              	17              	16              	2750        	100         	3e-05     	0           	open  	;
- 17              	18              	17              	1750        	100         	3e-05     	0           	open  	;
- 18              	19              	18              	800         	100         	3e-05     	0           	open  	;
- 19              	3               	19              	400         	100         	3e-05     	0           	open  	;
- 20              	3               	20              	2200        	100         	3e-05     	0           	open  	;
- 21              	20              	21              	1500        	100         	3e-05     	0           	open  	;
- 22              	21              	22              	500         	100         	3e-05     	0           	open  	;
- 23              	20              	23              	2650        	100         	3e-05     	0           	open  	;
- 24              	23              	24              	1250        	100         	3e-05     	0           	open  	;
- 25              	24              	25              	1300        	100         	3e-05     	0           	open  	;
- 26              	26              	25              	850         	100         	3e-05     	0           	open  	;
- 27              	27              	26              	300         	100         	3e-05     	0           	open  	;
- 28              	16              	27              	750         	100         	3e-05     	0           	open  	;
- 29              	23              	28              	1500        	100         	3e-05     	0           	open  	;
- 30              	28              	29              	2000        	100         	3e-05     	0           	open  	;
- 31              	29              	30              	1600        	100         	3e-05     	0           	open  	;
- 32              	30              	31              	150         	100         	3e-05     	0           	open  	;
- 33              	32              	31              	860         	100         	3e-05     	0           	open  	;
- 34              	25              	32              	950         	100         	3e-05     	0           	open  	; 
+ 1               	1               	2               	100         	100         	3e-05       	0           	open  	;	
+ 2               	2               	3               	1350        	100         	3e-05       	0           	open  	;
+ 3               	3               	4               	900         	100         	3e-05       	0           	open  	;
+ 4               	4               	5               	1150        	100         	3e-05       	0           	open  	;
+ 5               	5               	6               	1450        	100         	3e-05       	0           	open  	;
+ 6               	6               	7               	450         	100         	3e-05       	0           	open  	;
+ 7               	7               	8               	850         	100         	3e-05       	0           	open  	;
+ 8               	8               	9               	850         	100         	3e-05       	0           	open  	;
+ 9               	9               	10              	800         	100         	3e-05       	0           	open  	;
+ 10              	10              	11              	950         	100         	3e-05       	0           	open  	;
+ 11              	11              	12              	1200        	100         	3e-05       	0           	open  	;
+ 12              	12              	13              	3500        	100         	3e-05       	0           	open  	;
+ 13              	10              	14              	800         	100         	3e-05       	0           	open  	;
+ 14              	14              	15              	500         	100         	3e-05       	0           	open  	;
+ 15              	15              	16              	550         	100         	3e-05       	0           	open  	;
+ 16              	17              	16              	2750        	100         	3e-05       	0           	open  	;
+ 17              	18              	17              	1750        	100         	3e-05       	0           	open  	;
+ 18              	19              	18              	800         	100         	3e-05       	0           	open  	;
+ 19              	3               	19              	400         	100         	3e-05       	0           	open  	;
+ 20              	3               	20              	2200        	100         	3e-05       	0           	open  	;
+ 21              	20              	21              	1500        	100         	3e-05       	0           	open  	;
+ 22              	21              	22              	500         	100         	3e-05       	0           	open  	;
+ 23              	20              	23              	2650        	100         	3e-05       	0           	open  	;
+ 24              	23              	24              	1250        	100         	3e-05       	0           	open  	;
+ 25              	24              	25              	1300        	100         	3e-05       	0           	open  	;
+ 26              	26              	25              	850         	100         	3e-05       	0           	open  	;
+ 27              	27              	26              	300         	100         	3e-05       	0           	open  	;
+ 28              	16              	27              	750         	100         	3e-05       	0           	open  	;
+ 29              	23              	28              	1500        	100         	3e-05       	0           	open  	;
+ 30              	28              	29              	2000        	100         	3e-05       	0           	open  	;
+ 31              	29              	30              	1600        	100         	3e-05       	0           	open  	;
+ 32              	30              	31              	150         	100         	3e-05       	0           	open  	;
+ 33              	32              	31              	860         	100         	3e-05       	0           	open  	;
+ 34              	25              	32              	950         	100         	3e-05       	0           	open  	; 
 
 [PUMPS]
 ;ID              	Node1           	Node2           	Parameters
@@ -102,7 +102,9 @@ Hanoi example by Fujiwara and Khang, Water Resources Research, 1990, Modified by
 [CONTROLS]
 
 
+
 [RULES]
+
 
 
 [ENERGY]
@@ -148,7 +150,7 @@ Hanoi example by Fujiwara and Khang, Water Resources Research, 1990, Modified by
 
 [REPORT]
  Status             	Yes
- Summary            	Yes
+ Summary            	No
  Page               	0
 
 [OPTIONS]
