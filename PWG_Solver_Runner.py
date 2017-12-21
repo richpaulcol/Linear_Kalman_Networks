@@ -24,6 +24,6 @@ Net.kalman_iteration(100/Net.dt)
 
 #Net.node_Pressure_Plot(['UpStream','Mid','DownStream'],plot_uncertainty = 1)
 Net.node_Pressure_Plot(['1','4'],plot_uncertainty = 1,plot_all = 1)
-Net.node_Pressure_Plot(['4'],plot_uncertainty = 1,plot_all = 0)
+Net.node_Pressure_Plot(['2'],plot_uncertainty = 1,plot_all = 0)
 #A = Net.A_Matrix.todense()
 
