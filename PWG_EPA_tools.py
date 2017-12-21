@@ -1,11 +1,12 @@
 import numpy as np
-import pylab as pp
+#import pylab as pp
 from epanettools import epanet2 as epa
 from node import *
 from pipe import *
 from valve import *
 from pump import *
 from network import *
+#from network_c import *
 import csv
 
 #### This file contains a list of functions that allow interaction between EPANet and the PWG-Transient-Solver

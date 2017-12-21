@@ -1,5 +1,5 @@
 import numpy as np
-import pylab as pp
+#import pylab as pp
 
 class Valve(object):
 	"""Represents a valve in an EPANET model."""

@@ -1,7 +1,12 @@
 import pylab as pp
 import numpy as np
 from PWG_EPA_tools import *
+import time
 
+import Transient_Iterator as TI
+
+
+StartTime = time.time()
 
 FileName = 'Networks/1Pipe.inp'
 FileName = 'Networks/hanoi2.inp'
@@ -20,10 +25,15 @@ X0 = Net.X_Vector
 #print Net.X_Vector[Net.X_Vector.size/2:]
 #Net.initiating_Uncertainty()
 Net.initial_BC_Uncertainty_Only(0.01)
-Net.kalman_iteration(100/Net.dt)
+#Net.kalman_iteration(10/Net.dt)
+Net.times,Net.X_Vector,Net.P_Matrix,Net.Heads,Net.Demands,Net.P = TI.kalman_iteration(Net.X_Vector,Net.A_Matrix,Net.TransposeA,Net.P_Matrix,Net.U_Vector,Net.Q_Matrix,Net.nodal_CPs,Net.CPs,10/Net.dt,Net.dt)
 
 #Net.node_Pressure_Plot(['UpStream','Mid','DownStream'],plot_uncertainty = 1)
-Net.node_Pressure_Plot(['1','4'],plot_uncertainty = 1,plot_all = 1)
-Net.node_Pressure_Plot(['2'],plot_uncertainty = 1,plot_all = 0)
+#Net.node_Pressure_Plot(['1','4'],plot_uncertainty = 1,plot_all = 1)
+#Net.node_Pressure_Plot(['2'],plot_uncertainty = 1,plot_all = 0)
 #A = Net.A_Matrix.todense()
+
+EndTime = time.time()
+print "Run Time %0.3f (s) " % (EndTime-StartTime)
+
 

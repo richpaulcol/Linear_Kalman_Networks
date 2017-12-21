@@ -2,7 +2,7 @@ import numpy as np
 import pylab as pp
 from epanettools import epanet2 as epa
 import time
-import networkx as nx
+#import networkx as nx
 import scipy.sparse as ss
 """ 
 
@@ -399,18 +399,18 @@ class Network(object):
 		if plot_all == 0:			#Only plotting the specific nodes		
 			for node in nodes:
 				Index = self.nodal_CPs.keys().index(node)
-				pp.plot(self.times,self.Heads[1:,Index])
+				pp.plot(self.times,self.Heads[:,Index])
 		
 			if plot_uncertainty == 1:
 				for node in nodes:
 					Index = self.nodal_CPs.keys().index(node)
-					pp.fill_between(self.times,self.Heads[1:,Index]+np.sqrt(self.P[1:,Index]),self.Heads[1:,Index]-np.sqrt(self.P[1:,Index]),alpha = 0.25)
+					pp.fill_between(self.times,self.Heads[:,Index]+np.sqrt(self.P[:,Index]),self.Heads[:,Index]-np.sqrt(self.P[:,Index]),alpha = 0.25)
 		else:					#Plotting all the nodes
 			for Index in range(0,len(self.nodal_CPs)):
-				pp.plot(self.times,self.Heads[1:,Index])
+				pp.plot(self.times,self.Heads[:,Index])
 			if plot_uncertainty == 1:
 				for Index in range(0,len(self.nodal_CPs)):
-					pp.fill_between(self.times,self.Heads[1:,Index]+np.sqrt(self.P[1:,Index]),self.Heads[1:,Index]-np.sqrt(self.P[1:,Index]),alpha = 0.25)
+					pp.fill_between(self.times,self.Heads[:,Index]+np.sqrt(self.P[:,Index]),self.Heads[:,Index]-np.sqrt(self.P[:,Index]),alpha = 0.25)
 
 
 
