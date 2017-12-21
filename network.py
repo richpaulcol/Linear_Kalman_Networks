@@ -349,6 +349,7 @@ class Network(object):
 		self.P_Matrix[self.CPs:2*self.CPs,self.CPs:2*self.CPs] = np.diag(np.ones(self.CPs)*1e-8)
 		
 	def initial_BC_Uncertainty_Only(self,UC_percent):
+		## Currently this gfunction adds a percentage uncertainty to the Reservoir BC's and a fixed uncertainty of 0.1 l/s to all the demands, except those which already have a demand in which case it is specified by the same percentage as the reservoir
 		for i in self.nodes:
 			if i.type == 'Reservoir':
 				for k in i.pipesOut:
@@ -356,8 +357,8 @@ class Network(object):
 				for k in i.pipesIn:
 					self.P_Matrix[k.CP_Node2,k.CP_Node2] = self.X_Vector[k.CP_Node2]*UC_percent**2
 			if i.type == 'Node':
-				#self.P_Matrix[2*self.CPs+i.number,2*self.CPs+i.number] = self.X_Vector[2*self.CPs+i.number]*UC_percent**2
-				self.P_Matrix[2*self.CPs+i.number,2*self.CPs+i.number] = 0.001**2
+				self.P_Matrix[2*self.CPs+i.number,2*self.CPs+i.number] = 0.0001**2
+				self.P_Matrix[2*self.CPs+i.number,2*self.CPs+i.number] = self.X_Vector[2*self.CPs+i.number]*UC_percent**2
 			
 
 	######
@@ -373,8 +374,9 @@ class Network(object):
 		for t in self.times:
 			### A test transient generation function, the reservoir quickly changes head
 			if t == 0.1:
+				### At t= 0.1 we apply a control input to add 3l/s to a demand with 1% sigma uncertainty 
 				self.U_Vector[2*self.CPs+4] = 0.003
-				#self.Q_Matrix[2*self.CPs+4,2*self.CPs+4] = 0.003 * 0.01**2
+				self.Q_Matrix[2*self.CPs+4,2*self.CPs+4] = 0.003 * 0.01**2
 			if t > 0.1:
 				self.U_Vector[2*self.CPs+4] = 0.0
 				self.Q_Matrix[2*self.CPs+4,2*self.CPs+4] = 0.
@@ -387,6 +389,8 @@ class Network(object):
 			self.Heads = np.vstack((self.Heads,self.X_Vector[self.nodal_CPs.values()]))
 			self.P = np.vstack((self.P,self.P_Matrix.diagonal()[self.nodal_CPs.values()]))
 			self.Demands = np.vstack((self.Demands,self.X_Vector[2*self.CPs:]))
+
+
 			
 	######
 	##	Plotting the time histories of the nodal pressures

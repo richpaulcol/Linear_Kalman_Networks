@@ -19,8 +19,8 @@ X0 = Net.X_Vector
 
 #print Net.X_Vector[Net.X_Vector.size/2:]
 #Net.initiating_Uncertainty()
-Net.initial_BC_Uncertainty_Only(0.1)
-Net.kalman_iteration(10/Net.dt)
+Net.initial_BC_Uncertainty_Only(0.01)
+Net.kalman_iteration(100/Net.dt)
 
 #Net.node_Pressure_Plot(['UpStream','Mid','DownStream'],plot_uncertainty = 1)
 Net.node_Pressure_Plot(['1','4'],plot_uncertainty = 1,plot_all = 1)
