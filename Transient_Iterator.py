@@ -65,7 +65,7 @@ def kalman_iteration(X_Vector,A_Matrix,TransposeA,P_Matrix,U_Vector,Q_Matrix,nod
 	
 ######
 ##	Iterating the arrays with inference
-def kalman_iteration(X_Vector,A_Matrix,TransposeA,P_Matrix,U_Vector,Q_Matrix,nodal_CPs,CPs,iterations,dt):
+def kalman_iteration_inference(X_Vector,A_Matrix,TransposeA,P_Matrix,U_Vector,Q_Matrix,nodal_CPs,CPs,iterations,dt):
 	times = np.arange(0,iterations*dt,dt)
 	
 	iterations = int(iterations)
