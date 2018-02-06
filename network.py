@@ -342,13 +342,16 @@ class Network(object):
 	######
 	##	Generating a P and Q matrix
 
-	def initiating_Uncertainty(self):
-		## Assuming initial uncertainty in the flows at the junctions
-		#for i in self.nodal_CPs.values():
-		self.P_Matrix[:self.CPs,:self.CPs] = np.diag(np.ones(self.CPs)*1e-4)
-		self.P_Matrix[self.CPs:2*self.CPs,self.CPs:2*self.CPs] = np.diag(np.ones(self.CPs)*1e-8)
+	def initiating_initial_Uncertainty(self,UC_percent):
+		## Assuming uncertainty in flow and pressure at UC_precent of the initial value
+		self.P_Matrix[:self.CPs,:self.CPs] = np.diag(np.ones(self.CPs)*self.X_Vector[:self.CPs]*UC_percent**2)
+		self.P_Matrix[self.CPs:2*self.CPs,self.CPs:2*self.CPs] = np.diag(np.ones(self.CPs)*self.X_Vector[self.CPs:2*self.CPs]*UC_percent**2)
 		
-	def initial_BC_Uncertainty_Only(self,UC_percent):
+	def initiating_Additional_Uncertainty(self,UC_percent):
+		self.Q_Matrix[:self.CPs,:self.CPs] = np.diag(np.ones(self.CPs)*self.X_Vector[:self.CPs]*UC_percent**2)
+		self.Q_Matrix[self.CPs:2*self.CPs,self.CPs:2*self.CPs] = np.diag(np.ones(self.CPs)*self.X_Vector[self.CPs:2*self.CPs]*UC_percent**2)
+		
+	def initial_BC_Uncertainty_Head(self,UC_percent):
 		## Currently this gfunction adds a percentage uncertainty to the Reservoir BC's and a fixed uncertainty of 0.1 l/s to all the demands, except those which already have a demand in which case it is specified by the same percentage as the reservoir
 		for i in self.nodes:
 			if i.type == 'Reservoir':
@@ -356,13 +359,26 @@ class Network(object):
 					self.P_Matrix[k.CP_Node1,k.CP_Node1] = self.X_Vector[k.CP_Node1]*UC_percent**2
 				for k in i.pipesIn:
 					self.P_Matrix[k.CP_Node2,k.CP_Node2] = self.X_Vector[k.CP_Node2]*UC_percent**2
+					
+	def initial_BC_Uncertainty_Demand(self,value):
+		for i in self.nodes:
 			if i.type == 'Node':
-				self.P_Matrix[2*self.CPs+i.number,2*self.CPs+i.number] = 0.0001**2
-				self.P_Matrix[2*self.CPs+i.number,2*self.CPs+i.number] = self.X_Vector[2*self.CPs+i.number]*UC_percent**2
-			
-
+				self.P_Matrix[2*self.CPs+i.number,2*self.CPs+i.number] = value**2
+				#self.P_Matrix[2*self.CPs+i.number,2*self.CPs+i.number] = self.X_Vector[2*self.CPs+i.number]*UC_percent**2
+				#### In the future we will need to think about the flows into and out of a reservoir, there is no such thing as a constant head BC?
+	#####
+	##	Initiating the measurement arrays:
+#	def initiate_measurement_array(self,nodes,data,R_Matrix = np.zeros((len(nodes),len(nodes)))):
+#		
+#		Net.R_Matrix = R_Matrix
+		
+	
+	
 	######
 	##	Iterating the arrays (simple)
+	##
+	##	!!!!  DEPRECIATED  !!!!
+	
 	def kalman_iteration(self,iterations):
 		self.times = np.arange(0,iterations*self.dt,self.dt)
 		
@@ -417,7 +433,19 @@ class Network(object):
 		pp.ylabel('Head (m)')
 		pp.xlabel('Time (s)')
 		pp.show()
-		
+	
+	######
+	##	Plotting the demands
+	def demand_Plot(self):
+		pp.figure()
+		for i in self.nodes:
+			pp.plot(self.times,self.Demands[:,i.number],label = i.Name)
+			
+		pp.legend()
+		pp.ylabel('Head (m)')
+		pp.xlabel('Time (s)')
+		pp.show()
+			
 
 	######
 	##	Plotting the network configuration
