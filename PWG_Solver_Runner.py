@@ -4,7 +4,7 @@ from PWG_EPA_tools import *
 import time
 import Transient_Iterator as TI
 StartTime = time.time()
-
+import filterpy.kalman as km
 
 
 
@@ -13,7 +13,7 @@ Iterations = 2000
 FileName = 'Networks/1Pipe.inp'
 FileName = 'Networks/hanoi2.inp'
 #FileName = 'Networks/1PipeReversed.inp'
-#FileName = 'Networks/5PipesUnseen.inp'
+FileName = 'Networks/5PipesUnseen.inp'
 
 Net = Import_EPANet_Geom(FileName)
 #Net.geom_Plot(plot_Node_Names = True)
@@ -33,13 +33,13 @@ Net.initial_BC_Uncertainty_Head(0.001) # % value of the initial value
 Net.initial_BC_Uncertainty_Demand(0.001) # in m3/s
 
 
-Net.additional_Uncertainty_Head(0.0001)  # in m
-Net.additional_Uncertainty_Flow(0.0001)  # in m3/s
+#Net.additional_Uncertainty_Head(0.0001)  # in m
+#Net.additional_Uncertainty_Flow(0.0001)  # in m3/s
 
-Net.additional_BC_Uncertainty_Head(0.0001) # % value of the initial value
+Net.additional_BC_Uncertainty_Head(0.1) # % value of the initial value
 Net.additional_BC_Uncertainty_Demand(0.0001) # in m3/s
 
-
+#Net.Q_Matrix = ss.dok_matrix(np.ones(Net.Q_Matrix.shape)/1000.)
 
 
 
@@ -79,8 +79,8 @@ AllMeasuredData = np.vstack((np.load('MeasureData1.npy'),np.load('MeasureData2.n
 #######
 ## Iterating
 
-#TI.kalman_iteration(Net,Iterations)
-TI.forward_Prediction(Net,Iterations)
+TI.kalman_iteration(Net,Iterations)
+#TI.forward_Prediction(Net,Iterations)
 
 
 #####
@@ -121,4 +121,24 @@ EndTime = time.time()
 print "Run Time %0.3f (s) " % (EndTime-StartTime)
 
 
+
+
+f = km.KalmanFilter(dim_x = Net.X_Vector.size, dim_z = Net.Z_Vector.size)
+f.x = Net.X_Vector.T
+f.F = Net.A_Matrix.todense()
+f.H = Net.H_Matrix
+f.P = Net.P_Matrix.todense()
+f.R = Net.R_Matrix
+f.Q = Net.Q_Matrix.todense()
+
+Xs = np.zeros((Iterations,f.x.size))
+for i in range(int(Iterations)):
+	try:
+		f.update(Net.MeasurementData[:,i])
+	except:
+		f.x = f.x.T
+	Xs[i,:] = np.array(f.x)[:,0]
+
+for n in Net.nodes:
+	pp.plot(Xs[:,n.nodal_CP])
 

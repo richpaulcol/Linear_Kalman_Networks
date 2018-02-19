@@ -6,6 +6,8 @@ import numpy as np
 import scipy.sparse as ss
 from scipy.linalg import inv
 
+import filterpy.kalman as km
+
 """ 
 
 
@@ -176,5 +178,12 @@ def kalman_iteration(Net,iterations):
 		Net.Heads[t,:] = Net.X_Vector[node_CPs]
 		Net.Demands[t,:] = Net.X_Vector[2*Net.CPs:]
 		
-		
+def filterPyIteration(Net,iterations):
+	f = km.KalmanFilter(dim_x = Net.X_Vector.size, dim_z = Net.Z_Vector.size)
+	f.x = Net.X_Vector.T
+	f.F = Net.A_Matrix.todense()
+	f.H = Net.H_Matrix
+	f.P = Net.P_Matrix.todense()
+	f.R = Net.R_Matrix
+	f.Q = Net.Q_Matrix.todense()
 	
