@@ -342,30 +342,56 @@ class Network(object):
 	######
 	##	Generating a P and Q matrix
 
-	def initiating_initial_Uncertainty(self,UC_percent):
+	def initial_Uncertainty_Head(self,UC_percent):
 		## Assuming uncertainty in flow and pressure at UC_precent of the initial value
-		self.P_Matrix[:self.CPs,:self.CPs] = np.diag(np.ones(self.CPs)*self.X_Vector[:self.CPs]*UC_percent**2)
-		self.P_Matrix[self.CPs:2*self.CPs,self.CPs:2*self.CPs] = np.diag(np.ones(self.CPs)*self.X_Vector[self.CPs:2*self.CPs]*UC_percent**2)
-		
-	def initiating_Additional_Uncertainty(self,UC_percent):
-		self.Q_Matrix[:self.CPs,:self.CPs] = np.diag(np.ones(self.CPs)*self.X_Vector[:self.CPs]*UC_percent**2)
-		self.Q_Matrix[self.CPs:2*self.CPs,self.CPs:2*self.CPs] = np.diag(np.ones(self.CPs)*self.X_Vector[self.CPs:2*self.CPs]*UC_percent**2)
-		
+		#Adding Uncertainty to the initial heads
+		self.P_Matrix[:self.CPs,:self.CPs] = np.diag(np.ones(self.CPs)*UC_percent**2)
+		#self.P_Matrix[:self.CPs,:self.CPs] = np.ones(self.CPs)*UC_percent**2
+
+	def initial_Uncertainty_Flow(self,UC_percent):
+		#Adding Uncertainty to the initial flows
+		self.P_Matrix[self.CPs:2*self.CPs,self.CPs:2*self.CPs] = np.diag(np.ones(self.CPs)*UC_percent**2)
+		#self.P_Matrix[self.CPs:2*self.CPs,self.CPs:2*self.CPs] = np.ones(self.CPs)*UC_percent**2
+
 	def initial_BC_Uncertainty_Head(self,UC_percent):
-		## Currently this gfunction adds a percentage uncertainty to the Reservoir BC's and a fixed uncertainty of 0.1 l/s to all the demands, except those which already have a demand in which case it is specified by the same percentage as the reservoir
+		## Currently this function adds a fixed uncertainty to the Reservoir BC's 
 		for i in self.nodes:
 			if i.type == 'Reservoir':
 				for k in i.pipesOut:
-					self.P_Matrix[k.CP_Node1,k.CP_Node1] = self.X_Vector[k.CP_Node1]*UC_percent**2
+					self.P_Matrix[k.CP_Node1,k.CP_Node1] = UC_percent**2
 				for k in i.pipesIn:
-					self.P_Matrix[k.CP_Node2,k.CP_Node2] = self.X_Vector[k.CP_Node2]*UC_percent**2
-					
+					self.P_Matrix[k.CP_Node2,k.CP_Node2] = UC_percent**2
+
 	def initial_BC_Uncertainty_Demand(self,value):
 		for i in self.nodes:
 			if i.type == 'Node':
 				self.P_Matrix[2*self.CPs+i.number,2*self.CPs+i.number] = value**2
 				#self.P_Matrix[2*self.CPs+i.number,2*self.CPs+i.number] = self.X_Vector[2*self.CPs+i.number]*UC_percent**2
-				#### In the future we will need to think about the flows into and out of a reservoir, there is no such thing as a constant head BC?
+		
+
+
+	def additional_Uncertainty_Head(self,UC_percent):
+		#Adding additional uncertainty to the heads
+		self.Q_Matrix[:self.CPs,:self.CPs] = np.diag(np.ones(self.CPs)*UC_percent**2)
+
+	def additional_Uncertainty_Flow(self,UC_percent):
+		#Adding additional uncertainty to the flows		
+		self.Q_Matrix[self.CPs:2*self.CPs,self.CPs:2*self.CPs] = np.diag(np.ones(self.CPs)*UC_percent**2)
+		
+	def additional_BC_Uncertainty_Head(self,UC_percent):
+		## Currently this function adds a percentage uncertainty to the Reservoir BC's and a fixed uncertainty of 0.1 l/s to all the demands, except those which already have a demand in which case it is specified by the same percentage as the reservoir
+		for i in self.nodes:
+			if i.type == 'Reservoir':
+				for k in i.pipesOut:
+					self.Q_Matrix[k.CP_Node1,k.CP_Node1] = UC_percent**2
+				for k in i.pipesIn:
+					self.Q_Matrix[k.CP_Node2,k.CP_Node2] = UC_percent**2	
+
+	def additional_BC_Uncertainty_Demand(self,value):
+		for i in self.nodes:
+			if i.type == 'Node':
+				self.Q_Matrix[2*self.CPs+i.number,2*self.CPs+i.number] = value**2
+	
 	#####
 	##	Initiating the measurement arrays:
 #	def initiate_measurement_array(self,nodes,data,R_Matrix = np.zeros((len(nodes),len(nodes)))):
@@ -442,7 +468,7 @@ class Network(object):
 			pp.plot(self.times,self.Demands[:,i.number],label = i.Name)
 			
 		pp.legend()
-		pp.ylabel('Head (m)')
+		pp.ylabel('Demand (m3/s)')
 		pp.xlabel('Time (s)')
 		pp.show()
 			

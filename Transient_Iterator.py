@@ -89,13 +89,13 @@ def forward_Prediction(Net,iterations):
 		#print t
 		
 		#print t,int(0.1/dt)
-		if t == int(0.1/Net.dt):
-			### At t= 0.1 we apply a control input to add 3l/s to a demand with 1% sigma uncertainty 
-			Net.U_Vector[2*Net.CPs+4] = 0.003
-			Net.Q_Matrix[2*Net.CPs+4,2*Net.CPs+4] = 0.003 * 0.01**2
-		if t > 0.1/Net.dt:
-			Net.U_Vector[2*Net.CPs+4] = 0.0
-			Net.Q_Matrix[2*Net.CPs+4,2*Net.CPs+4] = 0.
+#		if t == int(0.1/Net.dt):
+#			### At t= 0.1 we apply a control input to add 3l/s to a demand with 1% sigma uncertainty 
+#			Net.U_Vector[2*Net.CPs+4] = 0.003
+#			Net.Q_Matrix[2*Net.CPs+4,2*Net.CPs+4] = 0.003 * 0.01**2
+#		if t > 0.1/Net.dt:
+#			Net.U_Vector[2*Net.CPs+4] = 0.0
+#			Net.Q_Matrix[2*Net.CPs+4,2*Net.CPs+4] = 0.
 		
 		### Propagating the state and unceratainty
 		Net.X_Vector = Net.A_Matrix.dot(Net.X_Vector)+Net.U_Vector
@@ -157,11 +157,15 @@ def kalman_iteration(Net,iterations):
 		
 		Net.Z_Vector = Net.MeasurementData[:,t]
 		
-		Net.K = Net.P_Matrix.dot(Net.TransposeH).dot( inv((Net.H_Matrix.dot(Net.P_Matrix).dot(Net.TransposeH) + Net.R_Matrix).todense()) )
-		
+		#Net.K = Net.P_Matrix.dot(Net.TransposeH).dot( inv(Net.H_Matrix.dot(Net.P_Matrix).dot(Net.TransposeH) + Net.R_Matrix).todense() )
+		Net.K = Net.P_Matrix.dot(Net.TransposeH).dot( inv(Net.H_Matrix.dot(Net.P_Matrix.todense()).dot(Net.TransposeH) + Net.R_Matrix) )
+
 		Net.X_Vector = Net.X_Vector + Net.K.dot(Net.Z_Vector - Net.H_Matrix.dot(Net.X_Vector))
-		Net.P_Matrix = ss.csc_matrix((ss.identity(Net.X_Vector.size) - Net.K.dot(Net.H_Matrix.todense())).dot(Net.P_Matrix.todense()))
-		
+
+		#Net.P_Matrix = ss.csc_matrix(ss.identity(Net.X_Vector.size) - Net.K.dot(Net.H_Matrix).dot(Net.P_Matrix.todense()))
+		#Net.P_Matrix = ss.csc_matrix(Net.P_Matrix - Net.K.dot((Net.H_Matrix.dot(Net.P_Matrix.todense().dot(Net.H_Matrix.T))) + Net.R_Matrix).dot(Net.K.T))
+
+		Net.P_Matrix = ss.csc_matrix( (np.identity(Net.X_Vector.size) - Net.K.dot(Net.H_Matrix)).dot(Net.P_Matrix.todense()) )
 
 		### Storing the head and uncertainty at the nodal position
 #		Heads = np.vstack((Heads,X_Vector[node_CPs]))
