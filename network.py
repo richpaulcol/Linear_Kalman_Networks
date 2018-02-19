@@ -4,6 +4,7 @@ from epanettools import epanet2 as epa
 import time
 #import networkx as nx
 import scipy.sparse as ss
+import sys
 """ 
 
 
@@ -169,7 +170,7 @@ class Network(object):
 		self.P_Matrix = (ss.dok_matrix((2*self.CPs+len(self.nodes),2*self.CPs+len(self.nodes)))) #State Covariance Matrix
 		self.Q_Matrix = (ss.dok_matrix((2*self.CPs+len(self.nodes),2*self.CPs+len(self.nodes)))) #Uncertainty Covariance Matrix
 
-
+		
 
 		###	Looping again to generate the actual values in the X_Vector and A matrix
 		for i in self.links:

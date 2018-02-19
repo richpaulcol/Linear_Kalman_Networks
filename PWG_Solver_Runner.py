@@ -5,10 +5,10 @@ import time
 import Transient_Iterator as TI
 StartTime = time.time()
 import filterpy.kalman as km
+import sys
 
 
-
-Iterations = 2000
+Iterations = 1000
 
 FileName = 'Networks/1Pipe.inp'
 FileName = 'Networks/hanoi2.inp'
@@ -25,23 +25,31 @@ print 'Length Error',Net.link_length_error
 
 
 
-Net.initial_Uncertainty_Head(0.002)  # in m
+Net.initial_Uncertainty_Head(0.2)  # in m
 Net.initial_Uncertainty_Flow(0.001)  # in m3/s
 
 #
-Net.initial_BC_Uncertainty_Head(0.001) # % value of the initial value
+Net.initial_BC_Uncertainty_Head(1.) # % value of the initial value
 Net.initial_BC_Uncertainty_Demand(0.001) # in m3/s
 
 
-#Net.additional_Uncertainty_Head(0.0001)  # in m
-#Net.additional_Uncertainty_Flow(0.0001)  # in m3/s
+Net.additional_Uncertainty_Head(0.01)  # in m
+Net.additional_Uncertainty_Flow(0.0001)  # in m3/s
 
 Net.additional_BC_Uncertainty_Head(0.1) # % value of the initial value
 Net.additional_BC_Uncertainty_Demand(0.0001) # in m3/s
 
 #Net.Q_Matrix = ss.dok_matrix(np.ones(Net.Q_Matrix.shape)/1000.)
+Net.P_Matrix[-1,-1] = 1.2e-4
+#Net.P_Matrix[-2,-1] = 1.e-3
+#Net.P_Matrix[-1,-2] = 1.e-3
 
 
+try:
+	pp.cholesky(Net.P_Matrix.todense())
+except:
+	print "Covariance Matrix not positive definite"
+#	sys.exit()
 
 fig1,axes = pp.subplots(3,4)
 axes[0,0].imshow(np.sqrt(Net.P_Matrix[:Net.CPs,:Net.CPs].todense()),vmin=0)
@@ -60,7 +68,7 @@ axes[2,2].imshow(np.sqrt(Net.Q_Matrix[2*Net.CPs:,2*Net.CPs:].todense()),vmin=0)
 #TI.forward_Prediction(Net,Iterations)
 
 #####	Including Measurements
-Measurement_Nodes = ['1','4','6']
+Measurement_Nodes = ['1','2','4','5','6']
 Net.R_Matrix = np.identity(len(Measurement_Nodes))*0.05**2
 Net.H_Matrix = np.zeros((len(Measurement_Nodes),Net.X_Vector.size))
 for i in range(len(Measurement_Nodes)):
@@ -69,12 +77,20 @@ for i in range(len(Measurement_Nodes)):
 Net.TransposeH = Net.H_Matrix.transpose()
 #Net.MeasurementData = np.random.uniform(99,101,Iterations)
 #Net.MeasurementData = np.sin(np.arange(Iterations)*0.01)+100
-Net.MeasurementData = np.vstack((np.load('MeasureData1.npy'),np.load('MeasureData4.npy'),np.load('MeasureData6.npy')))
+Net.MeasurementData = np.vstack((np.load('MeasureData1.npy'),np.load('MeasureData2.npy'),np.load('MeasureData4.npy'),np.load('MeasureData5.npy'),np.load('MeasureData6.npy')))
 
 
 AllMeasuredData = np.vstack((np.load('MeasureData1.npy'),np.load('MeasureData2.npy'),np.load('MeasureData3.npy'),np.load('MeasureData4.npy'),np.load('MeasureData5.npy'),np.load('MeasureData6.npy')))
 
+f = km.KalmanFilter(dim_x = Net.X_Vector.size, dim_z = Net.MeasurementData[:,i].size)
+#f = km.SquareRootKalmanFilter(dim_x = Net.X_Vector.size, dim_z = Net.MeasurementData[:,i].size)
 
+f.x = Net.X_Vector.T
+f.F = Net.A_Matrix.todense()
+f.H = Net.H_Matrix
+f.P = Net.P_Matrix.todense()
+f.R = Net.R_Matrix
+f.Q = Net.Q_Matrix.todense()
 
 #######
 ## Iterating
@@ -83,8 +99,8 @@ TI.kalman_iteration(Net,Iterations)
 #TI.forward_Prediction(Net,Iterations)
 
 
-#####
-##	Plotting
+######
+###	Plotting
 
 #Net.node_Pressure_Plot(['UpStream','Mid','DownStream'],plot_uncertainty = 1)
 Net.node_Pressure_Plot(['1','4'],plot_uncertainty = 1,plot_all = 1)
@@ -121,24 +137,48 @@ EndTime = time.time()
 print "Run Time %0.3f (s) " % (EndTime-StartTime)
 
 
-
-
-f = km.KalmanFilter(dim_x = Net.X_Vector.size, dim_z = Net.Z_Vector.size)
-f.x = Net.X_Vector.T
-f.F = Net.A_Matrix.todense()
-f.H = Net.H_Matrix
-f.P = Net.P_Matrix.todense()
-f.R = Net.R_Matrix
-f.Q = Net.Q_Matrix.todense()
+Net.times = np.arange(0,Iterations*Net.dt,Net.dt)
+Net.MeasurementData[:,i]
+#f = km.KalmanFilter(dim_x = Net.X_Vector.size, dim_z = Net.MeasurementData[:,i].size)
+#f.x = Net.X_Vector.T
+#f.F = Net.A_Matrix.todense()
+#f.H = Net.H_Matrix
+#f.P = Net.P_Matrix.todense()
+#f.R = Net.R_Matrix
+#f.Q = Net.Q_Matrix.todense()
 
 Xs = np.zeros((Iterations,f.x.size))
+Ps = np.zeros((Iterations,f.x.size,f.x.size))
+Xs[0,:] = np.array(f.x)
+Ps[0,:,:] = np.array(f.P)
+
 for i in range(int(Iterations)):
+	#f.x = f.x.T
+	f.predict()
 	try:
 		f.update(Net.MeasurementData[:,i])
 	except:
+		print('It sort of didnt wwork')
 		f.x = f.x.T
 	Xs[i,:] = np.array(f.x)[:,0]
+	Ps[i,:,:] = np.array(f.P)
+	
+pp.figure()
 
 for n in Net.nodes:
-	pp.plot(Xs[:,n.nodal_CP])
+	pp.plot(Net.times,Xs[:,n.nodal_CP])
+	pp.fill_between(Net.times,Xs[:,n.nodal_CP]+np.sqrt(Ps[:,n.nodal_CP,n.nodal_CP]),Xs[:,n.nodal_CP]-np.sqrt(Ps[:,n.nodal_CP,n.nodal_CP]),alpha = 0.25)
 
+
+
+fig2,axes2 = pp.subplots(3,2)
+axes2[0,0].imshow(np.sqrt(Ps[0,:Net.CPs,:Net.CPs]),vmin=0)
+axes2[1,0].imshow(np.sqrt(Ps[0,Net.CPs:2*Net.CPs,Net.CPs:2*Net.CPs]),vmin=0)
+axes2[2,0].imshow(np.sqrt(Ps[0,2*Net.CPs:,2*Net.CPs:]),vmin=0)
+
+axes2[0,1].imshow(np.sqrt(Ps[-1,:Net.CPs,:Net.CPs]),vmin=0)
+axes2[1,1].imshow(np.sqrt(Ps[-1,Net.CPs:2*Net.CPs,Net.CPs:2*Net.CPs]),vmin=0)
+axes2[2,1].imshow(np.sqrt(Ps[-1,2*Net.CPs:,2*Net.CPs:]),vmin=0)
+
+
+pp.show()
