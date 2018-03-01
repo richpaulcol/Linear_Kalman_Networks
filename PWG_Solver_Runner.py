@@ -25,22 +25,22 @@ print 'Length Error',Net.link_length_error
 
 
 
-Net.initial_Uncertainty_Head(0.2)  # in m
-Net.initial_Uncertainty_Flow(0.001)  # in m3/s
+Net.initial_Uncertainty_Head(1.)  # in m
+Net.initial_Uncertainty_Flow(0.01)  # in m3/s
 
 #
 Net.initial_BC_Uncertainty_Head(1.) # % value of the initial value
-Net.initial_BC_Uncertainty_Demand(0.001) # in m3/s
+Net.initial_BC_Uncertainty_Demand(0.01) # in m3/s
 
 
 Net.additional_Uncertainty_Head(0.01)  # in m
-Net.additional_Uncertainty_Flow(0.0001)  # in m3/s
+Net.additional_Uncertainty_Flow(0.00001)  # in m3/s
 
 Net.additional_BC_Uncertainty_Head(0.1) # % value of the initial value
-Net.additional_BC_Uncertainty_Demand(0.0001) # in m3/s
+Net.additional_BC_Uncertainty_Demand(0.00001) # in m3/s
 
 #Net.Q_Matrix = ss.dok_matrix(np.ones(Net.Q_Matrix.shape)/1000.)
-Net.P_Matrix[-1,-1] = 1.2e-4
+Net.P_Matrix[-1,-1] = 1.2e-8
 #Net.P_Matrix[-2,-1] = 1.e-3
 #Net.P_Matrix[-1,-2] = 1.e-3
 
@@ -51,15 +51,15 @@ except:
 	print "Covariance Matrix not positive definite"
 #	sys.exit()
 
-fig1,axes = pp.subplots(3,4)
-axes[0,0].imshow(np.sqrt(Net.P_Matrix[:Net.CPs,:Net.CPs].todense()),vmin=0)
-axes[0,2].imshow(np.sqrt(Net.Q_Matrix[:Net.CPs,:Net.CPs].todense()),vmin=0)
+fig1,axes = pp.subplots(3,2)
+axes[0,0].imshow((Net.P_Matrix[:Net.CPs,:Net.CPs].todense()),vmin=0)
+#axes[0,2].imshow((Net.Q_Matrix[:Net.CPs,:Net.CPs].todense()),vmin=0)
 
-axes[1,0].imshow(np.sqrt(Net.P_Matrix[Net.CPs:2*Net.CPs,Net.CPs:2*Net.CPs].todense()),vmin=0)
-axes[1,2].imshow(np.sqrt(Net.Q_Matrix[Net.CPs:2*Net.CPs,Net.CPs:2*Net.CPs].todense()),vmin=0)
+axes[1,0].imshow((Net.P_Matrix[Net.CPs:2*Net.CPs,Net.CPs:2*Net.CPs].todense()),vmin=0)
+#axes[1,2].imshow((Net.Q_Matrix[Net.CPs:2*Net.CPs,Net.CPs:2*Net.CPs].todense()),vmin=0)
 
-axes[2,0].imshow(np.sqrt(Net.P_Matrix[2*Net.CPs:,2*Net.CPs:].todense()),vmin=0)
-axes[2,2].imshow(np.sqrt(Net.Q_Matrix[2*Net.CPs:,2*Net.CPs:].todense()),vmin=0)
+axes[2,0].imshow((Net.P_Matrix[2*Net.CPs:,2*Net.CPs:].todense()),vmin=0)
+#axes[2,2].imshow((Net.Q_Matrix[2*Net.CPs:,2*Net.CPs:].todense()),vmin=0)
 
 
 
@@ -69,7 +69,7 @@ axes[2,2].imshow(np.sqrt(Net.Q_Matrix[2*Net.CPs:,2*Net.CPs:].todense()),vmin=0)
 
 #####	Including Measurements
 Measurement_Nodes = ['1','2','4','5','6']
-Net.R_Matrix = np.identity(len(Measurement_Nodes))*0.05**2
+Net.R_Matrix = np.identity(len(Measurement_Nodes))*0.5**2
 Net.H_Matrix = np.zeros((len(Measurement_Nodes),Net.X_Vector.size))
 for i in range(len(Measurement_Nodes)):
 	Net.H_Matrix[i,Net.nodal_CPs[Measurement_Nodes[i]]] = 1
@@ -92,12 +92,19 @@ f.P = Net.P_Matrix.todense()
 f.R = Net.R_Matrix
 f.Q = Net.Q_Matrix.todense()
 
+
+
 #######
 ## Iterating
 
 TI.kalman_iteration(Net,Iterations)
 #TI.forward_Prediction(Net,Iterations)
 
+
+try:
+	pp.cholesky(Net.P_Matrix.todense())
+except:
+	print "Covariance Matrix not positive definite"
 
 ######
 ###	Plotting
@@ -115,19 +122,19 @@ Net.demand_Plot()
 #pp.show()
 
 axes[0,1].imshow(Net.P_Matrix[:Net.CPs,:Net.CPs].todense(),vmin=0)
-axes[0,3].imshow(Net.Q_Matrix[:Net.CPs,:Net.CPs].todense(),vmin=0)
+#axes[0,3].imshow(Net.Q_Matrix[:Net.CPs,:Net.CPs].todense(),vmin=0)
 
-axes[1,1].imshow(np.sqrt(Net.P_Matrix[Net.CPs:2*Net.CPs,Net.CPs:2*Net.CPs].todense()),vmin=0)
-axes[1,3].imshow(np.sqrt(Net.Q_Matrix[Net.CPs:2*Net.CPs,Net.CPs:2*Net.CPs].todense()),vmin=0)
+axes[1,1].imshow((Net.P_Matrix[Net.CPs:2*Net.CPs,Net.CPs:2*Net.CPs].todense()),vmin=0)
+#axes[1,3].imshow((Net.Q_Matrix[Net.CPs:2*Net.CPs,Net.CPs:2*Net.CPs].todense()),vmin=0)
 
-axes[2,1].imshow(np.sqrt(Net.P_Matrix[2*Net.CPs:,2*Net.CPs:].todense()),vmin=0)
-axes[2,3].imshow(np.sqrt(Net.Q_Matrix[2*Net.CPs:,2*Net.CPs:].todense()),vmin=0)
+axes[2,1].imshow((Net.P_Matrix[2*Net.CPs:,2*Net.CPs:].todense()),vmin=0)
+#axes[2,3].imshow((Net.Q_Matrix[2*Net.CPs:,2*Net.CPs:].todense()),vmin=0)
 
 
 axes[0,0].set_title('P_prior')
 axes[0,1].set_title('P_post')
-axes[0,2].set_title('Q_prior')
-axes[0,3].set_title('Q_post')
+#axes[0,2].set_title('Q_prior')
+#axes[0,3].set_title('Q_post')
 
 axes[0,0].set_ylabel('Heads')
 axes[1,0].set_ylabel('Flows')
@@ -152,7 +159,7 @@ Ps = np.zeros((Iterations,f.x.size,f.x.size))
 Xs[0,:] = np.array(f.x)
 Ps[0,:,:] = np.array(f.P)
 
-for i in range(int(Iterations)):
+for i in range(1,int(Iterations)):
 	#f.x = f.x.T
 	f.predict()
 	try:
@@ -172,13 +179,13 @@ for n in Net.nodes:
 
 
 fig2,axes2 = pp.subplots(3,2)
-axes2[0,0].imshow(np.sqrt(Ps[0,:Net.CPs,:Net.CPs]),vmin=0)
-axes2[1,0].imshow(np.sqrt(Ps[0,Net.CPs:2*Net.CPs,Net.CPs:2*Net.CPs]),vmin=0)
-axes2[2,0].imshow(np.sqrt(Ps[0,2*Net.CPs:,2*Net.CPs:]),vmin=0)
+axes2[0,0].imshow((Ps[0,:Net.CPs,:Net.CPs]),vmin=0)
+axes2[1,0].imshow((Ps[0,Net.CPs:2*Net.CPs,Net.CPs:2*Net.CPs]),vmin=0)
+axes2[2,0].imshow((Ps[0,2*Net.CPs:,2*Net.CPs:]),vmin=0)
 
-axes2[0,1].imshow(np.sqrt(Ps[-1,:Net.CPs,:Net.CPs]),vmin=0)
-axes2[1,1].imshow(np.sqrt(Ps[-1,Net.CPs:2*Net.CPs,Net.CPs:2*Net.CPs]),vmin=0)
-axes2[2,1].imshow(np.sqrt(Ps[-1,2*Net.CPs:,2*Net.CPs:]),vmin=0)
+axes2[0,1].imshow((Ps[-1,:Net.CPs,:Net.CPs]),vmin=0)
+axes2[1,1].imshow((Ps[-1,Net.CPs:2*Net.CPs,Net.CPs:2*Net.CPs]),vmin=0)
+axes2[2,1].imshow((Ps[-1,2*Net.CPs:,2*Net.CPs:]),vmin=0)
 
 
 pp.show()
