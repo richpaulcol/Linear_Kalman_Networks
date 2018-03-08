@@ -7,6 +7,8 @@ import scipy.sparse as ss
 from scipy.linalg import inv
 
 import filterpy.kalman as km
+import pykalman as pk
+
 
 """ 
 
@@ -186,4 +188,36 @@ def filterPyIteration(Net,iterations):
 	f.P = Net.P_Matrix.todense()
 	f.R = Net.R_Matrix
 	f.Q = Net.Q_Matrix.todense()
+		
+	Xs = np.zeros((Iterations,f.x.size))
+	Ps = np.zeros((Iterations,f.x.size,f.x.size))
+	Xs[0,:] = np.array(f.x)
+	Ps[0,:,:] = np.array(f.P)
+
+	for i in range(1,int(Iterations)):
+		#f.x = f.x.T
+		f.predict()
+		try:
+			f.update(Net.MeasurementData[:,i])
+		except:
+			print('It sort of didnt wwork')
+			f.x = f.x.T
+		Xs[i,:] = np.array(f.x)[:,0]
+		Ps[i,:,:] = np.array(f.P)
 	
+	
+def pykalmanIteration(Net,k_filter=True,k_smoother = False):
+	kf = pk.KalmanFilter()
+	kf.transition_matrices = Net.A_Matrix.todense()
+	kf.observation_matrices = Net.H_Matrix
+	kf.transition_covariance = Net.Q_Matrix.todense()
+	kf.observation_covariance = Net.R_Matrix
+	kf.initial_state_mean = Net.Initial_X
+	kf.initial_state_covariance = Net.Initial_P
+	
+	if k_filter == True:
+		Net.filtered_state_estimates,Net.filtered_state_covariances = kf.filter(Net.MeasurementData.T)
+	if k_smoother == True:
+		Net.smoothed_state_estimates,Net.smoothed_state_covariances = kf.smooth(Net.MeasurementData.T)
+	
+	return kf
