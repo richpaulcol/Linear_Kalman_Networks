@@ -221,3 +221,24 @@ def pykalmanIteration(Net,k_filter=True,k_smoother = False):
 		Net.smoothed_state_estimates,Net.smoothed_state_covariances = kf.smooth(Net.MeasurementData.T)
 	
 	return kf
+
+def node_Pressure_Plot_pykalman(Net,plot_uncertainty = False,filtered = True, smoothed = True):
+	
+	pp.figure()
+
+	if filtered == True:
+		for n in Net.nodes:
+			pp.plot(Net.times,Net.filtered_state_estimates[:Net.times.size,n.nodal_CP])
+			if plot_uncertainty == True:
+				pp.fill_between(Net.times,Net.filtered_state_estimates[:Net.times.size,n.nodal_CP]+np.sqrt(Net.filtered_state_covariances[:Net.times.size,n.nodal_CP,n.nodal_CP]),Net.filtered_state_estimates[:Net.times.size,n.nodal_CP]-np.sqrt(Net.filtered_state_covariances[:Net.times.size,n.nodal_CP,n.nodal_CP]),alpha = 0.25)
+	if smoothed == True:
+		for n in Net.nodes:
+		pp.plot(Net.times,smoothed_state_estimates[:Net.times.size,n.nodal_CP])
+		if plot_uncertainty == True:
+			pp.fill_between(Net.times,smoothed_state_estimates[:Net.times.size,n.nodal_CP]+np.sqrt(smoothed_state_covariances[:Net.times.size,n.nodal_CP,n.nodal_CP]),smoothed_state_estimates[:Net.times.size,n.nodal_CP]-np.sqrt(smoothed_state_covariances[:Net.times.size,n.nodal_CP,n.nodal_CP]),alpha = 0.25)
+
+def demand_Plot_pykalman(Net,
+
+pp.figure()
+	pp.plot(Net.times,Net.filtered_state_estimates[:Net.times.size,2*Net.CPs:])
+
