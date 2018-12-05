@@ -48,7 +48,7 @@ Net.P_Matrix[-1,-1] = 1.2e-8
 Net.Initial_X = np.copy(Net.X_Vector)
 Net.Initial_P = np.copy(Net.P_Matrix.todense())
 
-
+#Net.times = np.arange(0,Iterations*Net.dt,Net.dt)
 try:
 	pp.cholesky(Net.P_Matrix.todense())
 except:
@@ -102,29 +102,29 @@ f.Q = Net.Q_Matrix.todense()
 ## Iterating
 
 #TI.kalman_iteration(Net,Iterations)
-TI.forward_Prediction(Net,Iterations)
+#TI.forward_Prediction(Net,Iterations)
 
 
-try:
-	pp.cholesky(Net.P_Matrix.todense())
-except:
-	print "Covariance Matrix not positive definite"
+#try:
+#	pp.cholesky(Net.P_Matrix.todense())
+#except:
+#	print "Covariance Matrix not positive definite"
 
 ######
 ###	Plotting
 
 #Net.node_Pressure_Plot(['UpStream','Mid','DownStream'],plot_uncertainty = 1)
-Net.node_Pressure_Plot(['1','4'],plot_uncertainty = 1,plot_all = 1)
+#Net.node_Pressure_Plot(['1','4'],plot_uncertainty = 1,plot_all = 1)
 #pp.plot(Net.times,Net.MeasurementData.T[:np.size(Net.times)],'k')
-pp.plot(Net.times,AllMeasuredData.T[:np.size(Net.times)],':')
-pp.ylim(95,105)
+#pp.plot(Net.times,AllMeasuredData.T[:np.size(Net.times)],':')
+#pp.ylim(95,105)
 #Net.node_Pressure_Plot(['4'],plot_uncertainty = 1,plot_all = 0)
 #pp.plot(Net.times,Net.MeasurementData,'k')
-Net.demand_Plot()
+#Net.demand_Plot()
 #pp.figure()
 #pp.plot(Net.times,Net.Demands)
 #pp.show()
-asdasdas
+#asdasdas
 #axes[0,1].imshow(Net.P_Matrix[:Net.CPs,:Net.CPs].todense(),vmin=0)
 ##axes[0,3].imshow(Net.Q_Matrix[:Net.CPs,:Net.CPs].todense(),vmin=0)
 
@@ -226,9 +226,9 @@ kf.initial_state_covariance = Net.Initial_P
 
 
 
-#kf = TI.pykalmanIteration(Net,k_filter=True,k_smoother = False)
-#pp.figure()
-#pp.plot(Net.times,Net.filtered_state_estimates[:Net.times.size,2*Net.CPs:])
+kf = TI.pykalmanIteration(Net,k_filter=True,k_smoother = False)
+pp.figure()
+pp.plot(Net.times,Net.filtered_state_estimates[:Net.times.size,2*Net.CPs:])
 
 ##pp.figure()
 ##pp.plot(Net.times,Net.smoothed_state_estimates[:Net.times.size,2*Net.CPs:])
