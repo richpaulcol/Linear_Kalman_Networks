@@ -3,26 +3,26 @@
 
 [JUNCTIONS]
 ;ID              	Elev        	Demand      	Pattern         
- 2               	0           	0.           	                	;
- 3               	0           	0.5           	                	;
- 4               	0           	0.           	                	;
- 5               	0           	0.         	                	;
+ 2               	0           	0.5           	                	;
+ 3               	0           	2.0           	                	;
+ 4               	0           	0.0           	                	;
+ 5               	0           	1.5         	                	;
  6               	0           	1.           	                	;
 
 [RESERVOIRS]
 ;ID              	Head        	Pattern         
- 1               	20         	                	;
+ 1               	100         	                	;
 
 [TANKS]
 ;ID              	Elevation   	InitLevel   	MinLevel    	MaxLevel    	Diameter    	MinVol      	VolCurve
 
 [PIPES]
 ;ID              	Node1           	Node2           	Length      	Diameter    	Roughness   	MinorLoss   	Status
- 1               	1               	2               	90          	100         	10           	0           	Open  	;
- 2               	2               	3               	90          	100         	10           	0           	Open  	;
- 3               	3               	4               	90          	100         	10           	0           	Open  	;
- 4               	4               	5               	90          	100         	10           	0           	Open  	;
- 5               	5               	6               	90          	100         	10           	0           	Open  	;
+ 1               	1               	2               	90          	100         	1           	0           	Open  	;
+ 2               	2               	3               	90          	100         	1           	0           	Open  	;
+ 3               	3               	4               	90          	100         	1           	0           	Open  	;
+ 4               	4               	5               	90          	100         	1           	0           	Open  	;
+ 5               	5               	6               	90          	100         	1           	0           	Open  	;
 
 [PUMPS]
 ;ID              	Node1           	Node2           	Parameters

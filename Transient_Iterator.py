@@ -93,13 +93,11 @@ def forward_Prediction(Net,iterations):
 		#print t
 		
 		#print t,int(0.1/dt)
-		if t == int(2/Net.dt):
-			### At t= 0.1 we apply a control input to add 3l/s to a demand with 1% sigma uncertainty 
-			Net.X_Vector[2*Net.CPs+4] = 0.0015
-			Net.X_Vector[2*Net.CPs+1] = np.sqrt(Net.X_Vector[200]) * Net.nodes[1].CdA
+#		if t == int(0.1/Net.dt):
+#			### At t= 0.1 we apply a control input to add 3l/s to a demand with 1% sigma uncertainty 
+#			Net.U_Vector[2*Net.CPs+4] = 0.003
 #			Net.Q_Matrix[2*Net.CPs+4,2*Net.CPs+4] = 0.003 * 0.01**2
-		if t > 2/Net.dt:
-			Net.X_Vector[2*Net.CPs+1] = np.sqrt(Net.X_Vector[200]) * Net.nodes[1].CdA
+#		if t > 0.1/Net.dt:
 #			Net.U_Vector[2*Net.CPs+4] = 0.0
 #			Net.Q_Matrix[2*Net.CPs+4,2*Net.CPs+4] = 0.
 		
@@ -224,20 +222,20 @@ def pykalmanIteration(Net,k_filter=True,k_smoother = False):
 	
 	return kf
 
-#def node_Pressure_Plot_pykalman(Net,plot_uncertainty = False,filtered = True, smoothed = True):
-#	
-#	pp.figure()
+def node_Pressure_Plot_pykalman(Net,plot_uncertainty = False,filtered = True, smoothed = True):
+	
+	pp.figure()
 
-#	if filtered == True:
-#		for n in Net.nodes:
-#			pp.plot(Net.times,Net.filtered_state_estimates[:Net.times.size,n.nodal_CP])
-#			if plot_uncertainty == True:
-#				pp.fill_between(Net.times,Net.filtered_state_estimates[:Net.times.size,n.nodal_CP]+np.sqrt(Net.filtered_state_covariances[:Net.times.size,n.nodal_CP,n.nodal_CP]),Net.filtered_state_estimates[:Net.times.size,n.nodal_CP]-np.sqrt(Net.filtered_state_covariances[:Net.times.size,n.nodal_CP,n.nodal_CP]),alpha = 0.25)
-#	if smoothed == True:
-#		for n in Net.nodes:
-#		pp.plot(Net.times,smoothed_state_estimates[:Net.times.size,n.nodal_CP])
-#		if plot_uncertainty == True:
-#			pp.fill_between(Net.times,smoothed_state_estimates[:Net.times.size,n.nodal_CP]+np.sqrt(smoothed_state_covariances[:Net.times.size,n.nodal_CP,n.nodal_CP]),smoothed_state_estimates[:Net.times.size,n.nodal_CP]-np.sqrt(smoothed_state_covariances[:Net.times.size,n.nodal_CP,n.nodal_CP]),alpha = 0.25)
+	if filtered == True:
+		for n in Net.nodes:
+			pp.plot(Net.times,Net.filtered_state_estimates[:Net.times.size,n.nodal_CP])
+			if plot_uncertainty == True:
+				pp.fill_between(Net.times,Net.filtered_state_estimates[:Net.times.size,n.nodal_CP]+np.sqrt(Net.filtered_state_covariances[:Net.times.size,n.nodal_CP,n.nodal_CP]),Net.filtered_state_estimates[:Net.times.size,n.nodal_CP]-np.sqrt(Net.filtered_state_covariances[:Net.times.size,n.nodal_CP,n.nodal_CP]),alpha = 0.25)
+	if smoothed == True:
+		for n in Net.nodes:
+			pp.plot(Net.times,smoothed_state_estimates[:Net.times.size,n.nodal_CP])
+			if plot_uncertainty == True:
+				pp.fill_between(Net.times,smoothed_state_estimates[:Net.times.size,n.nodal_CP]+np.sqrt(smoothed_state_covariances[:Net.times.size,n.nodal_CP,n.nodal_CP]),smoothed_state_estimates[:Net.times.size,n.nodal_CP]-np.sqrt(smoothed_state_covariances[:Net.times.size,n.nodal_CP,n.nodal_CP]),alpha = 0.25)
 
 #def demand_Plot_pykalman(Net,
 
