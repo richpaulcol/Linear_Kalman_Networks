@@ -505,11 +505,3 @@ class Network(object):
 		pp.axis('equal')
 		pp.show()
 		
-		
-	def Assign_Emmiters_All(self):
-		
-		for i in range(len(self.nodes)):
-			if self.nodes[i].type == 'Node':
-				if self.nodes[i].demand != 0:				
-					self.nodes[i].External_Flow = True
-					self.nodes[i].CdA = self.nodes[i].demand / np.sqrt(self.nodes[i].H_0)

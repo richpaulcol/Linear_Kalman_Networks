@@ -96,7 +96,7 @@ def forward_Prediction(Net,iterations):
 		if t == int(2/Net.dt):
 			### At t= 0.1 we apply a control input to add 3l/s to a demand with 1% sigma uncertainty 
 			Net.X_Vector[2*Net.CPs+4] = 0.0015
-			Net.X_Vector[2*Net.CPs+1] = np.sqrt(Net.X_Vector[200]) * Net.nodes[1].CdA
+			Net.X_Vector[2*Net.CPs+1] = np.sqrt((Net.X_Vector[19]+Net.X_Vector[20])/2.) * Net.nodes[1].CdA
 #			Net.Q_Matrix[2*Net.CPs+4,2*Net.CPs+4] = 0.003 * 0.01**2
 		if t > 2/Net.dt:
 			Net.X_Vector[2*Net.CPs+1] = np.sqrt(Net.X_Vector[200]) * Net.nodes[1].CdA

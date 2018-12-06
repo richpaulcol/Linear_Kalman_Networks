@@ -20,7 +20,7 @@ Net = Import_EPANet_Geom(FileName)
 #Net.geom_Plot(plot_Node_Names = True)
 Net.Import_EPANet_Results()
 Net.Constant_Wavespeed(1000)
-Net.Initialise_Linear_Kalman(0.001)
+Net.Initialise_Linear_Kalman(0.01)
 Net.Assign_Emmiters_All()
 print 'Length Error',Net.link_length_error
 
