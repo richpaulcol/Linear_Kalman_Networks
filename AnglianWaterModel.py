@@ -9,19 +9,17 @@ import sys
 import pykalman as pk
 
 
-Iterations = 2000
+Iterations = 6000
+Directory = 'SimpleBranched/'
 
-#FileName = 'Networks/1Pipe.inp'
-#FileName = 'Networks/hanoi2.inp'
-FileName = 'Networks/1PipeReversed.inp'
-FileName = 'Networks/5PipesUnseen.inp'
-#FileName = 'Networks/HRig.inp'
+
+FileName = Directory + 'SimpleBranched.inp'
 
 Net = Import_EPANet_Geom(FileName)
 #Net.geom_Plot(plot_Node_Names = True)
 Net.Import_EPANet_Results()
 Net.Constant_Wavespeed(1000)
-Net.Initialise_Linear_Kalman(1./50)
+Net.Initialise_Linear_Kalman(1./100)
 
 print 'Length Error',Net.link_length_error
 
@@ -46,8 +44,8 @@ Net.Initial_P = np.copy(Net.P_Matrix.todense())
 
 
 #####	Including Measurements
-All_Nodes = ['PT1','PT2','PT4','PT5']
-Measurement_Nodes = ['PT1','PT5']
+All_Nodes = ['1','2','3','4','5','6','7','8','9','10']
+Measurement_Nodes = ['1','2','6','10']
 NotMeasured = [x for x in All_Nodes if x not in Measurement_Nodes]
 
 
@@ -65,19 +63,26 @@ Net.TransposeH = Net.H_Matrix.transpose()
 
 
 Measurements = {}
-Measurements['PT1'] = 'MeasureData1.npy'
-Measurements['PT2'] = 'MeasureData1.npy'
-Measurements['PT4'] = 'MeasureData1.npy'
-Measurements['PT5'] = 'MeasureData1.npy'
+Measurements['1'] = Directory+'Node_Head_1.npy'
+Measurements['2'] = Directory+'Node_Head_2.npy'
+Measurements['3'] = Directory+'Node_Head_3.npy'
+Measurements['4'] = Directory+'Node_Head_4.npy'
+Measurements['5'] = Directory+'Node_Head_5.npy'
+Measurements['6'] = Directory+'Node_Head_6.npy'
+Measurements['7'] = Directory+'Node_Head_7.npy'
+Measurements['8'] = Directory+'Node_Head_8.npy'
+Measurements['9'] = Directory+'Node_Head_9.npy'
+Measurements['10'] = Directory+'Node_Head_10.npy'
+
 
 MeasurementData = []
 for i in Measurement_Nodes:
-	MeasurementData.append(np.load(Measurements[i])[::100])
+	MeasurementData.append(np.load(Measurements[i]))
 MeasurementData = np.array(MeasurementData).T
 
 AllMeasurementData = []
 for i in All_Nodes:
-	AllMeasurementData.append(np.load(Measurements[i])[::100])
+	AllMeasurementData.append(np.load(Measurements[i]))
 AllMeasurementData = np.array(AllMeasurementData).T	
 
 kf = km.KalmanFilter(dim_x = Net.X_Vector.size, dim_z = MeasurementData[1,:].size)
@@ -116,7 +121,7 @@ for i in range(0,Iterations):
 	X_kf[i,:] = np.array(kf.x)[:,0]
 	
 	
-colors = ['r','g','b','y','c','k']
+colors = ['r','g','b','y','c','k','r','g','b','y','c','k']
 fig,axs = pp.subplots(3,1,sharex=True)
 for i in range(len(Measurement_Nodes)):
 	for j in Net.nodes:
@@ -129,7 +134,7 @@ axs[0].set_ylabel(r'Measured and Modelled Head')
 for i in range(len(NotMeasured)):
 	for j in Net.nodes:
 		if j.Name == NotMeasured[i]:
-			axs[1].plot(AllMeasurementData[:,i-1,:],label = j.Name+' Measured',marker='o',linewidth=0,color = colors[i])
+			axs[1].plot(AllMeasurementData[:,i-1,],label = j.Name+' Measured',marker='o',linewidth=0,color = colors[i])
 			axs[1].plot(X_kf[:,j.nodal_CP],label=j.Name+' Filtered',color = colors[i])
 #axs[1].legend()
 #axs[1].plot(AllMeasuredData[2,:])
@@ -138,7 +143,7 @@ axs[1].set_xlim(0,Iterations)
 axs[1].set_ylabel('True and Modelled Head')
 
 for i in range(len(Net.nodes)):
-	axs[2].plot(X_kf[:,70+i],label = Net.nodes[i].Name)
+	axs[2].plot(X_kf[:,2*Net.CPs+i],label = Net.nodes[i].Name)
 axs[2].legend()
 axs[2].set_ylabel('Nodal Demands')
 pp.show()

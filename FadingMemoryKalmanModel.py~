@@ -65,10 +65,10 @@ Net.TransposeH = Net.H_Matrix.transpose()
 
 
 Measurements = {}
-Measurements['PT1'] = 'MeasureData1.npy'
-Measurements['PT2'] = 'MeasureData1.npy'
-Measurements['PT4'] = 'MeasureData1.npy'
-Measurements['PT5'] = 'MeasureData1.npy'
+Measurements['PT1'] = 'P1.npy'
+Measurements['PT2'] = 'P2.npy'
+Measurements['PT4'] = 'P3.npy'
+Measurements['PT5'] = 'P4.npy'
 
 MeasurementData = []
 for i in Measurement_Nodes:
