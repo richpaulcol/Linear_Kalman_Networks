@@ -5,6 +5,7 @@ import time
 #import networkx as nx
 import scipy.sparse as ss
 import sys
+import pyhyd
 """ 
 
 
@@ -340,6 +341,179 @@ class Network(object):
 					self.A_Matrix[k.CP_Node1+self.CPs,2*self.CPs+i.number] = -Bc/k.B
 		self.TransposeA = self.A_Matrix.T
 
+	def regenerateA(self):
+		Wavespeed = 1000.
+		Diameter = 0.1
+		Area = Diameter**2 *np.pi / 4
+		Roughness = 0.001
+		self.dx = 10
+		
+		B = Wavespeed/(9.81*Area)					## This is the basic calc constant 
+		
+		Qs = self.X_Vector[self.CPs:2*self.CPs]
+		self.Qs=Qs
+		Frictions = pyhyd.friction_factor(Diameter,Qs,Roughness/1000.,force_turb_flow =False)
+		R = Frictions*self.dx*abs(Qs) / (2*9.81*Diameter*Area**2)
+#		print R
+		NewA_Matrix = np.zeros(self.A_Matrix.shape)
+		NodePoints = self.nodal_CPs.values()
+		NodePoints.sort()
+		NodePoints[0] = -1
+		for i in range(len(NodePoints)-1):
+			for j in range(NodePoints[i]+2,NodePoints[i+1]):
+				#Hp,Ha
+				NewA_Matrix[j,j-1] = 0.5
+				#Hp,Hb
+				NewA_Matrix[j,j+1] = 0.5
+				#Hp,Qa
+				NewA_Matrix[j,j+self.CPs-1] = 0.5*B - 0.5*R[j-1]
+				#Hp,Qb
+				NewA_Matrix[j,j+self.CPs+1] = -0.5*B + 0.5*R[j+1]
+				
+				#Qp,Ha
+				NewA_Matrix[j+self.CPs,j-1] = 1./(2.*B)
+				#Qp,Hb
+				NewA_Matrix[j+self.CPs,j+1] = -1./(2.*B)
+				#Qp,Qa
+				NewA_Matrix[j+self.CPs,j+self.CPs-1] = 0.5*(1-R[j-1]/B)
+				#Qp,Qb
+				NewA_Matrix[j+self.CPs,j+self.CPs+1] = 0.5*(1-R[j+1]/B)
+		
+		for i in self.nodes:
+			## non pressure depedent
+			#self.X_Vector[2*self.CPs+i.number] = Qext
+			## pressure dependent
+			#if i.demand != 0.:
+			#	self.X_Vector[2*self.CPs+i.number] = np.sqrt(self.X_Vector[self.nodal_CPs[i.Name]]) * i.CdA
+		
+			NewA_Matrix[2*self.CPs+i.number,2*self.CPs+i.number] = 1   #Correct
+			
+			Bc= 0 
+			for k in i.pipesOut:
+				#print 'pOut',k.B
+				Bc += 1./k.B
+			for k in i.pipesIn:
+				#print 'pIn',k.B
+				Bc += 1./k.B
+			Bc = 1./Bc
+#			print Bc
+			
+			if i.type == 'Reservoir':
+				#print 'In',i.pipesIn,'Out',i.pipesOut
+				for k in i.pipesIn:
+					#print 'Reservoir pipesIn',k.CP_Node2,k.CP_Node2+self.CPs,
+					#Hp,Hp
+					NewA_Matrix[k.CP_Node2,k.CP_Node2] = 1
+					#Qp,Hp
+					NewA_Matrix[k.CP_Node2+self.CPs,k.CP_Node2] = -1./k.B
+					#Qp,Ha
+					NewA_Matrix[k.CP_Node2+self.CPs,k.CP_Node2-1] = 1./k.B
+					#Qp,Qa
+					NewA_Matrix[k.CP_Node2+self.CPs,k.CP_Node2+self.CPs-1] = 1. - R[k.CP_Node2-1]/k.B
+
+				for k in i.pipesOut:
+					#print 'Reservoir pipesOut',k.CP_Node1,k.CP_Node1+self.CPs,1. - k.R/k.B
+					#Hp,Hp	
+					NewA_Matrix[k.CP_Node1,k.CP_Node1] = 1
+					#Qp,Hp
+					NewA_Matrix[k.CP_Node1+self.CPs,k.CP_Node1] = 1./k.B
+					#Qp,Hb
+					NewA_Matrix[k.CP_Node1+self.CPs,k.CP_Node1+1] = -1./k.B
+					#Qp,Qb
+					NewA_Matrix[k.CP_Node1+self.CPs,k.CP_Node1+self.CPs+1] = 1. - R[k.CP_Node1+1]/k.B
+
+			if i.type == 'Node':
+#				print 'In',i.pipesIn,'Out',i.pipesOut
+				for k in i.pipesIn:	##Creation of the Cc element required for both Hp and Qp
+					for j in i.pipesIn:
+						#print 'Node pipesIn',k.CP_Node2,j.CP_Node2,j.CP_Node2-1,j.CP_Node2+self.CPs-1
+						#Hp,Ha
+						NewA_Matrix[k.CP_Node2,j.CP_Node2-1] = Bc/j.B
+						#Hp,Qa
+						NewA_Matrix[k.CP_Node2,j.CP_Node2+self.CPs-1] = Bc*(1-R[j.CP_Node2-1]/j.B)
+#						#Qp,Ha
+						NewA_Matrix[k.CP_Node2+self.CPs,j.CP_Node2-1] = Bc/j.B
+#						Qp,Qa
+						NewA_Matrix[k.CP_Node2+self.CPs,j.CP_Node2+self.CPs-1] = Bc*(1-R[j.CP_Node2-1]/j.B)
+#						NewA_Matrix[k.CP_Node2+self.CPs,j.CP_Node2+self.CPs-1] = Bc*(1-j.R/j.B)
+
+					for j in i.pipesOut:
+						#print 'Node pipesOut',k.CP_Node2,j.CP_Node1,j.CP_Node1+1,j.CP_Node1+self.CPs+1
+						#Hp,Hb
+						NewA_Matrix[k.CP_Node2,j.CP_Node1+1] = Bc/j.B
+						#Hp,Qb
+						NewA_Matrix[k.CP_Node2,j.CP_Node1+self.CPs+1] = -Bc*(1-R[j.CP_Node1+1]/j.B)
+#						#Qp,Hb
+						NewA_Matrix[k.CP_Node2+self.CPs,j.CP_Node1+1] = Bc/j.B
+						#Qp,Qb
+						NewA_Matrix[k.CP_Node2+self.CPs,j.CP_Node1+self.CPs+1] = -Bc*(1-R[j.CP_Node1+1]/j.B)
+
+				for k in i.pipesOut:	##Creation of the Cc element required for both Hp and Qp
+					for j in i.pipesIn:
+						#print 'Node pipesIn',k.CP_Node1,j.CP_Node2,j.CP_Node2-1,j.CP_Node2+self.CPs-1
+						#Hp,Ha
+						NewA_Matrix[k.CP_Node1,j.CP_Node2-1] = Bc/j.B
+						#Hp,Qa
+						NewA_Matrix[k.CP_Node1,j.CP_Node2+self.CPs-1] = Bc*(1-R[j.CP_Node2-1]/j.B)
+						#Qp,Ha
+						NewA_Matrix[k.CP_Node1+self.CPs,j.CP_Node2-1] = Bc/j.B
+						#Qp,Qa
+						NewA_Matrix[k.CP_Node1+self.CPs,j.CP_Node2+self.CPs-1] = Bc*(1-R[j.CP_Node2-1]/j.B)
+
+					for j in i.pipesOut:
+						#print 'Node pipesOut',k.CP_Node1,j.CP_Node1,j.CP_Node1+1,j.CP_Node1+self.CPs+1
+						#Hp,Hb
+						NewA_Matrix[k.CP_Node1,j.CP_Node1+1] = Bc/j.B
+						#Hp,Qb
+						NewA_Matrix[k.CP_Node1,j.CP_Node1+self.CPs+1] = -Bc*(1-R[j.CP_Node1+1]/j.B)
+						#Qp,Hb
+						NewA_Matrix[k.CP_Node1+self.CPs,j.CP_Node1+1] = Bc/j.B
+						#Qp,Qb
+						NewA_Matrix[k.CP_Node1+self.CPs,j.CP_Node1+self.CPs+1] = -Bc*(1-R[j.CP_Node1+1]/j.B)
+
+				for k in i.pipesIn:
+					#print Bc,k.B,Bc * Qext / k.B
+					#print 'Dave'
+					#print 'Final Node pipesIn',k.CP_Node2,k.CP_Node2+self.CPs,j.CP_Node2,j.CP_Node2-1,j.CP_Node2+self.CPs-1
+					#self.U_Vector[k.CP_Node2] = -Bc * Qext #Adding the control to the head node				
+					#self.U_Vector[k.CP_Node2+self.CPs] = Bc * Qext /k.B#Adding the control 
+
+					
+					#Qp
+					NewA_Matrix[k.CP_Node2+self.CPs,:] *= -1./k.B
+#					#Qp,Ha
+					NewA_Matrix[k.CP_Node2+self.CPs,k.CP_Node2-1] += 1./k.B
+##					#Qp,Qa
+					NewA_Matrix[k.CP_Node2+self.CPs,k.CP_Node2+self.CPs-1] += (1-k.R/k.B)
+					
+					#### Demands in the state vector
+					#Hp
+					NewA_Matrix[k.CP_Node2,2*self.CPs+i.number] = -Bc
+					#Qa
+					NewA_Matrix[k.CP_Node2+self.CPs,2*self.CPs+i.number] = Bc/k.B
+#					
+
+				for k in i.pipesOut:
+					#print Bc,k.B,-Bc * Qext / k.B
+					#print 'Final Node pipesOut',k.CP_Node1,k.CP_Node1+self.CPs,j.CP_Node1+1,j.CP_Node1+self.CPs+1
+					#self.U_Vector[k.CP_Node1] = -Bc* Qext #Adding the control to the head node				
+					#self.U_Vector[k.CP_Node1+self.CPs] = -Bc * Qext / k.B #Adding the control 
+					
+					
+					#Qp
+					NewA_Matrix[k.CP_Node1+self.CPs,:] *= 1./k.B
+					#Qp,Hb
+					NewA_Matrix[k.CP_Node1+self.CPs,k.CP_Node1+1] += -1./k.B
+					#Qp,Qb
+					NewA_Matrix[k.CP_Node1+self.CPs,k.CP_Node1+self.CPs+1] += (1-k.R/k.B)
+					
+					#### Demands in the state vector
+					#Hp
+					NewA_Matrix[k.CP_Node1,2*self.CPs+i.number] = -Bc
+					#Qp
+					NewA_Matrix[k.CP_Node1+self.CPs,2*self.CPs+i.number] = -Bc/k.B
+#			
+		return NewA_Matrix
 	######
 	##	Generating a P and Q matrix
 
